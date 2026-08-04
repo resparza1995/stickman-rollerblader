@@ -10,6 +10,7 @@ public class PlayerMovement : MonoBehaviour
     public float horizontalMovement;
 
     public float jumpForce = 5f;
+    public float fallMultiplier = 2.5f;
 
     public Transform groundCheck;
     public Vector2 groundCheckSize = new Vector2(1.8f, 0.1f);
@@ -18,8 +19,14 @@ public class PlayerMovement : MonoBehaviour
 
     private Animator animator;
 
+    [Header("Slope Settings")]
+    public float slopeRotationSpeed = 15f;
     private Vector2 slopeNormal;
     private bool isOnSlope;
+
+    private bool canRampBoost;
+    private Vector2 currentRampBoostImpulse;
+    private float rampBoostTimer;
     
     void Start()
     {
@@ -36,13 +43,50 @@ public class PlayerMovement : MonoBehaviour
         checkFlip();
         UpdateGroundedState();
         CheckSlope();
+        UpdateSlopeRotation();
+        UpdateRampBoostTimer();
         animator.SetFloat("Horizontal", Mathf.Abs(horizontalMovement));
+        animator.SetFloat("VerticalVelocity", rb.linearVelocity.y);
         animator.SetBool("IsGrounded", isGrounded);
+    }
+
+    private void UpdateSlopeRotation()
+    {
+        if (isGrounded && isOnSlope)
+        {
+            float targetAngle = Mathf.Atan2(slopeNormal.y, slopeNormal.x) * Mathf.Rad2Deg - 90f;
+            Quaternion targetRotation = Quaternion.Euler(0f, 0f, targetAngle);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * slopeRotationSpeed);
+        }
+        else
+        {
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.identity, Time.deltaTime * slopeRotationSpeed);
+        }
+    }
+
+    private void UpdateRampBoostTimer()
+    {
+        if (rampBoostTimer > 0f)
+        {
+            rampBoostTimer -= Time.deltaTime;
+            if (rampBoostTimer <= 0f)
+            {
+                canRampBoost = false;
+            }
+        }
+    }
+
+    public void EnableRampBoost(Vector2 impulse, float duration)
+    {
+        canRampBoost = true;
+        currentRampBoostImpulse = impulse;
+        rampBoostTimer = duration;
     }
 
     void FixedUpdate()
     {
-        if (isGrounded && isOnSlope)
+        // Only apply slope movement if grounded, on slope, and NOT ascending from a jump
+        if (isGrounded && isOnSlope && rb.linearVelocity.y <= 0.1f)
         {
             Vector2 slopeDirection = Vector2.Perpendicular(slopeNormal).normalized;
             if (slopeDirection.x < 0)
@@ -56,6 +100,11 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             rb.linearVelocity = new Vector2(horizontalMovement * moveSpeed, rb.linearVelocity.y);
+        }
+
+        if (rb.linearVelocity.y < 0)
+        {
+            rb.linearVelocity += Vector2.up * (Physics2D.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime);
         }
     }
 
@@ -83,9 +132,26 @@ public class PlayerMovement : MonoBehaviour
 
     public void Jump(InputAction.CallbackContext context) 
     {
-        if (!context.performed || !isGrounded)
+        if (!context.performed)
             return;
 
+        if (canRampBoost)
+        {
+            canRampBoost = false;
+            rampBoostTimer = 0f;
+            isGrounded = false;
+            animator.SetTrigger("Jump");
+
+            float facingDirection = transform.localScale.x > 0 ? 1f : -1f;
+            Vector2 boostVelocity = new Vector2(currentRampBoostImpulse.x * facingDirection, currentRampBoostImpulse.y);
+            rb.linearVelocity = boostVelocity;
+            return;
+        }
+
+        if (!isGrounded)
+            return;
+
+        isGrounded = false;
         animator.SetTrigger("Jump");
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
     }
