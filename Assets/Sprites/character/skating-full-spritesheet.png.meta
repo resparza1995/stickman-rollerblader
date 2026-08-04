@@ -1,0 +1,572 @@
+fileFormatVersion: 2
+guid: 340353610536a3649afcb9c959631001
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -9049442808911981185
+    second: skating-full-spritesheet_0
+  - first:
+      213: -3812856793182733826
+    second: skating-full-spritesheet_1
+  - first:
+      213: -8881894823022433553
+    second: skating-full-spritesheet_2
+  - first:
+      213: -5130002816215241697
+    second: skating-full-spritesheet_3
+  - first:
+      213: 5746917120733662212
+    second: skating-full-spritesheet_4
+  - first:
+      213: 1378158348181388127
+    second: skating-full-spritesheet_5
+  - first:
+      213: -9156721737049426010
+    second: skating-full-spritesheet_6
+  - first:
+      213: -627206758212744513
+    second: skating-full-spritesheet_7
+  - first:
+      213: -1515595061232644526
+    second: skating-full-spritesheet_8
+  - first:
+      213: 488245958769564837
+    second: skating-full-spritesheet_9
+  - first:
+      213: 8660777983680815427
+    second: skating-full-spritesheet_10
+  - first:
+      213: 768226820961987508
+    second: skating-full-spritesheet_11
+  - first:
+      213: -6733485680079836963
+    second: skating-full-spritesheet_12
+  - first:
+      213: -5307084176465785239
+    second: skating-full-spritesheet_13
+  - first:
+      213: -2921198019860006763
+    second: skating-full-spritesheet_14
+  - first:
+      213: -7983033072426449919
+    second: skating-full-spritesheet_15
+  - first:
+      213: -4260242020213027494
+    second: skating-full-spritesheet_16
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 8192
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: skating-full-spritesheet_0
+      rect:
+        serializedVersion: 2
+        x: 620
+        y: 1189
+        width: 498
+        height: 851
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f75969716bbe96280800000000000000
+      internalID: -9049442808911981185
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_1
+      rect:
+        serializedVersion: 2
+        x: 2525
+        y: 1189
+        width: 506
+        height: 854
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ef978eea2f2061bc0800000000000000
+      internalID: -3812856793182733826
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_2
+      rect:
+        serializedVersion: 2
+        x: 4452
+        y: 1187
+        width: 491
+        height: 859
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: feaed5d77bb2db480800000000000000
+      internalID: -8881894823022433553
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_3
+      rect:
+        serializedVersion: 2
+        x: 6400
+        y: 1189
+        width: 457
+        height: 864
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f1cacba5e919ec8b0800000000000000
+      internalID: -5130002816215241697
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_4
+      rect:
+        serializedVersion: 2
+        x: 8320
+        y: 1188
+        width: 457
+        height: 865
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 40cc0fe3ca621cf40800000000000000
+      internalID: 5746917120733662212
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_5
+      rect:
+        serializedVersion: 2
+        x: 10372
+        y: 1184
+        width: 318
+        height: 881
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5b379347b3302310800000000000000
+      internalID: 1378158348181388127
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_6
+      rect:
+        serializedVersion: 2
+        x: 12259
+        y: 1186
+        width: 347
+        height: 875
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6a73214381acce080800000000000000
+      internalID: -9156721737049426010
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_7
+      rect:
+        serializedVersion: 2
+        x: 14143
+        y: 1186
+        width: 380
+        height: 864
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fba4108c6c6bb47f0800000000000000
+      internalID: -627206758212744513
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_8
+      rect:
+        serializedVersion: 2
+        x: 703
+        y: 107
+        width: 380
+        height: 863
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 25e44ef525687fae0800000000000000
+      internalID: -1515595061232644526
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_9
+      rect:
+        serializedVersion: 2
+        x: 2555
+        y: 104
+        width: 463
+        height: 855
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5acda77dc1996c600800000000000000
+      internalID: 488245958769564837
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_10
+      rect:
+        serializedVersion: 2
+        x: 4475
+        y: 103
+        width: 463
+        height: 856
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 341a1db70b3413870800000000000000
+      internalID: 8660777983680815427
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_11
+      rect:
+        serializedVersion: 2
+        x: 6357
+        y: 118
+        width: 504
+        height: 854
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4bbed52393a49aa00800000000000000
+      internalID: 768226820961987508
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_12
+      rect:
+        serializedVersion: 2
+        x: 8277
+        y: 116
+        width: 504
+        height: 856
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dd869a2137add82a0800000000000000
+      internalID: -6733485680079836963
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_13
+      rect:
+        serializedVersion: 2
+        x: 10295
+        y: 119
+        width: 410
+        height: 865
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 96e09a44f037956b0800000000000000
+      internalID: -5307084176465785239
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_14
+      rect:
+        serializedVersion: 2
+        x: 12215
+        y: 120
+        width: 410
+        height: 864
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5987babc0e1d577d0800000000000000
+      internalID: -2921198019860006763
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_15
+      rect:
+        serializedVersion: 2
+        x: 14174
+        y: 105
+        width: 367
+        height: 872
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 10483df67b1963190800000000000000
+      internalID: -7983033072426449919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skating-full-spritesheet_16
+      rect:
+        serializedVersion: 2
+        x: 14294
+        y: 102
+        width: 57
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a5d8200547490e4c0800000000000000
+      internalID: -4260242020213027494
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      skating-full-spritesheet_0: -9049442808911981185
+      skating-full-spritesheet_1: -3812856793182733826
+      skating-full-spritesheet_10: 8660777983680815427
+      skating-full-spritesheet_11: 768226820961987508
+      skating-full-spritesheet_12: -6733485680079836963
+      skating-full-spritesheet_13: -5307084176465785239
+      skating-full-spritesheet_14: -2921198019860006763
+      skating-full-spritesheet_15: -7983033072426449919
+      skating-full-spritesheet_16: -4260242020213027494
+      skating-full-spritesheet_2: -8881894823022433553
+      skating-full-spritesheet_3: -5130002816215241697
+      skating-full-spritesheet_4: 5746917120733662212
+      skating-full-spritesheet_5: 1378158348181388127
+      skating-full-spritesheet_6: -9156721737049426010
+      skating-full-spritesheet_7: -627206758212744513
+      skating-full-spritesheet_8: -1515595061232644526
+      skating-full-spritesheet_9: 488245958769564837
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

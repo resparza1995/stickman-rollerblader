@@ -1,0 +1,39 @@
+# Carpetas temporales y generadas por Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Archivos de caché de compilación de Android
+.utmp/
+
+# Archivos de configuración de editores de código (VS Code, Visual Studio, Rider)
+.vs/
+.gradle/
+ExportedObj/
+.consulo/
+.idea/
+*.suo
+*.user
+*.userprefs
+*.sln
+*.csproj
+*.unityproj
+*.booproj
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Forzar la inclusión de los archivos .meta (¡Críticos para Unity!)
+!/[Aa]ssets/**/*.meta
+
+# Archivos de volcado de memoria y logs intermitentes
+*.log
+*.crash
+*.dll.*
