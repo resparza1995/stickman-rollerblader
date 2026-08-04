@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3015601067451357155}
   - component: {fileID: 2783462768993117623}
+  - component: {fileID: 8429867333992567296}
   m_Layer: 0
   m_Name: Coping
   m_TagString: Untagged
@@ -26,8 +27,8 @@ Transform:
   m_GameObject: {fileID: 4768664510689619187}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2.87, y: 3.19, z: 0}
-  m_LocalScale: {x: 2.756029, y: 0.80266565, z: 1.588454}
+  m_LocalPosition: {x: 1.13, y: 1.38, z: 0}
+  m_LocalScale: {x: 3.4450362, y: 5.282543, z: 1.588454}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6095370597062168022}
@@ -62,7 +63,7 @@ BoxCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
@@ -78,6 +79,20 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &8429867333992567296
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4768664510689619187}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5711db408248ccb4b9777e53567ea21d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RampBoostZone
+  boostImpulse: {x: 10, y: 14}
+  boostWindowDuration: 0.25
 --- !u!1 &8814453107710957330
 GameObject:
   m_ObjectHideFlags: 0
@@ -181,7 +196,7 @@ PolygonCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 9a766d6e64db3b645b010297d8079dd4, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
