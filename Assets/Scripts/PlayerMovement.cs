@@ -18,6 +18,7 @@ public class PlayerMovement : MonoBehaviour
     public bool isGrounded;
 
     private Animator animator;
+    private TricksSystem.TrickController trickController;
 
     [Header("Slope Settings")]
     public float slopeRotationSpeed = 15f;
@@ -27,11 +28,16 @@ public class PlayerMovement : MonoBehaviour
     private bool canRampBoost;
     private Vector2 currentRampBoostImpulse;
     private float rampBoostTimer;
+    [Header("Air Rotation Settings")]
+    public float spinDuration = 0.5f;
+    private bool isSpinning;
+    private Coroutine spinCoroutine;
     
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+        trickController = GetComponent<TricksSystem.TrickController>();
         if (rb != null)
         {
             rb.constraints = RigidbodyConstraints2D.FreezeRotation;
@@ -50,8 +56,11 @@ public class PlayerMovement : MonoBehaviour
         animator.SetBool("IsGrounded", isGrounded);
     }
 
+
     private void UpdateSlopeRotation()
     {
+        if (isSpinning) return;
+
         if (isGrounded && isOnSlope)
         {
             float targetAngle = Mathf.Atan2(slopeNormal.y, slopeNormal.x) * Mathf.Rad2Deg - 90f;
@@ -154,6 +163,102 @@ public class PlayerMovement : MonoBehaviour
         isGrounded = false;
         animator.SetTrigger("Jump");
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+    }
+
+    public void Trick(InputAction.CallbackContext context)
+    {
+        if (!context.performed)
+            return;
+
+        if (!isGrounded)
+        {
+            string controlName = context.control != null ? context.control.name : "Trick";
+
+            if (trickController == null)
+            {
+                trickController = GetComponent<TricksSystem.TrickController>();
+            }
+
+            animator.SetTrigger("AirRotate");
+
+            if (spinCoroutine != null)
+            {
+                StopCoroutine(spinCoroutine);
+            }
+
+            if (controlName.Equals("upArrow", System.StringComparison.OrdinalIgnoreCase))
+            {
+                // Backflip (Z rotation +360)
+                spinCoroutine = StartCoroutine(PerformZFlip(1f));
+            }
+            else if (controlName.Equals("downArrow", System.StringComparison.OrdinalIgnoreCase))
+            {
+                // Frontflip (Z rotation -360)
+                spinCoroutine = StartCoroutine(PerformZFlip(-1f));
+            }
+            else if (controlName.Equals("leftArrow", System.StringComparison.OrdinalIgnoreCase))
+            {
+                // 360 Spin (Y rotation 360)
+                spinCoroutine = StartCoroutine(PerformYSpin(1f));
+            }
+            else if (controlName.Equals("rightArrow", System.StringComparison.OrdinalIgnoreCase))
+            {
+                // 360 Spin (Y rotation -360)
+                spinCoroutine = StartCoroutine(PerformYSpin(-1f));
+            }
+            else
+            {
+                spinCoroutine = StartCoroutine(PerformYSpin(1f));
+            }
+
+            if (trickController != null)
+            {
+                bool executed = trickController.TryExecuteTrick(controlName, TricksSystem.TrickType.Air);
+                if (!executed)
+                {
+                    trickController.TryExecuteTrick("AirRotate", TricksSystem.TrickType.Air);
+                }
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator PerformZFlip(float direction)
+    {
+        isSpinning = true;
+        float elapsed = 0f;
+        float startZAngle = transform.eulerAngles.z;
+
+        while (elapsed < spinDuration && !isGrounded)
+        {
+            elapsed += Time.deltaTime;
+            float progress = Mathf.Clamp01(elapsed / spinDuration);
+            float currentAngle = Mathf.Lerp(0f, 360f * direction, progress);
+            transform.rotation = Quaternion.Euler(0f, 0f, startZAngle + currentAngle);
+            yield return null;
+        }
+
+        transform.rotation = Quaternion.identity;
+        isSpinning = false;
+        spinCoroutine = null;
+    }
+
+    private System.Collections.IEnumerator PerformYSpin(float direction)
+    {
+        isSpinning = true;
+        float elapsed = 0f;
+
+        while (elapsed < spinDuration && !isGrounded)
+        {
+            elapsed += Time.deltaTime;
+            float progress = Mathf.Clamp01(elapsed / spinDuration);
+            float currentAngle = Mathf.Lerp(0f, 360f * direction, progress);
+            transform.rotation = Quaternion.Euler(0f, currentAngle, 0f);
+            yield return null;
+        }
+
+        transform.rotation = Quaternion.identity;
+        isSpinning = false;
+        spinCoroutine = null;
     }
 
     private void OnDrawGizmosSelected() 

@@ -53,3 +53,19 @@ Allows the player to gain extra height and speed by pressing `Space` right at th
 ### Smooth Damping (`CameraFollow.cs`)
 - Tracks the player's horizontal position (X-axis) using `Vector3.SmoothDamp`.
 - Locks vertical positioning (Y-axis) to a fixed height (`fixedY = -0.47f` by default) to keep side-scrolling level layout visible and stable.
+
+---
+
+## 5. Controls & Trick System
+
+### Control Scheme
+- **Movement (`WASD`)**: `A` and `D` keys drive horizontal skater movement; `W` / `Space` triggers jumps. Flechas (arrow keys) are isolated from horizontal movement.
+- **Air Rotation Tricks (`Arrow Keys`)**:
+  - **Left / Right Arrow**: Air 360 Spin (rotación de 360° en el eje Y sobre sí mismo).
+  - **Up / Down Arrow**: Backflip (`Up`) y Frontflip (`Down`) (volteretas completas de 360° en el eje Z).
+
+### Air360 Trick
+- **Trigger**: Activated by pressing Left, Right, Up, or Down arrow key when in mid-air.
+- **Animation**: Triggers `AirRotate` animator state (`AirRotate.anim`).
+- **Scoring**: Executed through `TrickController.TryExecuteTrick`, registering `Air360` (`+150 pts`).
+

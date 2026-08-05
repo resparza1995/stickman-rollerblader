@@ -15,7 +15,10 @@ namespace TricksSystem
         {
             foreach (var trick in availableTricks)
             {
-                if (trick != null && trick.trickType == currentContext && trick.inputBinding.Equals(inputName, StringComparison.OrdinalIgnoreCase))
+                if (trick != null && trick.trickType == currentContext &&
+                   (trick.inputBinding.Equals(inputName, StringComparison.OrdinalIgnoreCase) ||
+                    trick.trickName.Equals(inputName, StringComparison.OrdinalIgnoreCase) ||
+                    trick.animationTrigger.Equals(inputName, StringComparison.OrdinalIgnoreCase)))
                 {
                     ExecuteTrick(trick);
                     return true;
