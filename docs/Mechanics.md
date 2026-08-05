@@ -59,13 +59,14 @@ Allows the player to gain extra height and speed by pressing `Space` right at th
 ## 5. Controls & Trick System
 
 ### Control Scheme
-- **Movement (`WASD`)**: `A` and `D` keys drive horizontal skater movement; `W` / `Space` triggers jumps. Flechas (arrow keys) are isolated from horizontal movement.
+- **Movement (`WASD`)**: `A` and `D` keys control horizontal skater movement (`Move` action); `W` or `Space` triggers jumps (`Jump` action). Arrow keys are isolated from horizontal movement.
 - **Air Rotation Tricks (`Arrow Keys`)**:
-  - **Left / Right Arrow**: Air 360 Spin (rotación de 360° en el eje Y sobre sí mismo).
-  - **Up / Down Arrow**: Backflip (`Up`) y Frontflip (`Down`) (volteretas completas de 360° en el eje Z).
+  - **Left / Right Arrow**: Air 360 Spin (360° horizontal body rotation around Y-axis).
+  - **Up / Down Arrow**: Backflip (`UpArrow`) and Frontflip (`DownArrow`) (360° somersault flips around Z-axis).
 
-### Air360 Trick
-- **Trigger**: Activated by pressing Left, Right, Up, or Down arrow key when in mid-air.
-- **Animation**: Triggers `AirRotate` animator state (`AirRotate.anim`).
-- **Scoring**: Executed through `TrickController.TryExecuteTrick`, registering `Air360` (`+150 pts`).
+### Air Tricks & Scoring Integration
+- **Execution Trigger**: Activated when an Arrow key is pressed while airborne (`!isGrounded`).
+- **Animation & Physics**: Triggers the `AirRotate` animator state (`AirRotate.anim`) and runs dynamic rotation coroutines (`PerformYSpin` for Y-axis spins, `PerformZFlip` for Z-axis flips) over `spinDuration`.
+- **Scoring**: Processed via `TrickController.TryExecuteTrick`, granting score points (e.g., `+150 pts` for `Air360`) upon successful airborne execution.
+
 
