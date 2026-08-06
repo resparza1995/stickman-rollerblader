@@ -13,21 +13,24 @@ public class PlayerMovement : MonoBehaviour
     public float fallMultiplier = 2.5f;
 
     public Transform groundCheck;
-    public Vector2 groundCheckSize = new Vector2(1.8f, 0.1f);
+    public Vector2 groundCheckSize = new Vector2(0.6f, 0.15f);
     public LayerMask groundLayer;
+    public float slopeCheckRadius = 0.2f;
     public bool isGrounded;
 
     private Animator animator;
     private TricksSystem.TrickController trickController;
 
     [Header("Slope Settings")]
-    public float slopeRotationSpeed = 15f;
+    public float slopeRotationSpeed = 25f;
     private Vector2 slopeNormal;
     private bool isOnSlope;
 
     private bool canRampBoost;
     private Vector2 currentRampBoostImpulse;
     private float rampBoostTimer;
+    private float initialGravityScale;
+    private float jumpCooldownTimer;
     [Header("Air Rotation Settings")]
     public float spinDuration = 0.5f;
     private bool isSpinning;
@@ -40,20 +43,34 @@ public class PlayerMovement : MonoBehaviour
         trickController = GetComponent<TricksSystem.TrickController>();
         if (rb != null)
         {
-            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+            initialGravityScale = rb.gravityScale;
         }
     }
 
     void Update()
     {
         checkFlip();
-        UpdateGroundedState();
-        CheckSlope();
-        UpdateSlopeRotation();
+        
+        if (jumpCooldownTimer > 0f)
+        {
+            jumpCooldownTimer -= Time.deltaTime;
+            isGrounded = false;
+            isOnSlope = false;
+        }
+        else
+        {
+            UpdateGroundedState();
+        }
+
         UpdateRampBoostTimer();
         animator.SetFloat("Horizontal", Mathf.Abs(horizontalMovement));
         animator.SetFloat("VerticalVelocity", rb.linearVelocity.y);
         animator.SetBool("IsGrounded", isGrounded);
+    }
+
+    private void LateUpdate()
+    {
+        UpdateSlopeRotation();
     }
 
 
@@ -63,7 +80,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (isGrounded && isOnSlope)
         {
-            float targetAngle = Mathf.Atan2(slopeNormal.y, slopeNormal.x) * Mathf.Rad2Deg - 90f;
+            float targetAngle = Mathf.Atan2(-slopeNormal.x, slopeNormal.y) * Mathf.Rad2Deg;
             Quaternion targetRotation = Quaternion.Euler(0f, 0f, targetAngle);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * slopeRotationSpeed);
         }
@@ -94,44 +111,73 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Only apply slope movement if grounded, on slope, and NOT ascending from a jump
-        if (isGrounded && isOnSlope && rb.linearVelocity.y <= 0.1f)
-        {
-            Vector2 slopeDirection = Vector2.Perpendicular(slopeNormal).normalized;
-            if (slopeDirection.x < 0)
-            {
-                slopeDirection = -slopeDirection;
-            }
+        rb.angularVelocity = 0f;
 
-            Vector2 moveVelocity = slopeDirection * (horizontalMovement * moveSpeed);
-            rb.linearVelocity = moveVelocity;
+        if (isGrounded && isOnSlope)
+        {
+            rb.gravityScale = 0f;
+            Vector2 slopeDirection = new Vector2(slopeNormal.y, -slopeNormal.x);
+            rb.linearVelocity = slopeDirection * (horizontalMovement * moveSpeed);
         }
         else
         {
+            rb.gravityScale = initialGravityScale;
             rb.linearVelocity = new Vector2(horizontalMovement * moveSpeed, rb.linearVelocity.y);
         }
 
-        if (rb.linearVelocity.y < 0)
+        if (!isGrounded && rb.linearVelocity.y < 0)
         {
             rb.linearVelocity += Vector2.up * (Physics2D.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime);
         }
     }
 
+    private System.Collections.Generic.List<ContactPoint2D> contactsList = new System.Collections.Generic.List<ContactPoint2D>();
+
+    public void UpdateGroundedState()
+    {
+        bool grounded = false;
+        bool slope = false;
+        Vector2 bestNormal = Vector2.up;
+
+        if (rb != null)
+        {
+            int count = rb.GetContacts(contactsList);
+            for (int i = 0; i < count; i++)
+            {
+                Vector2 n = contactsList[i].normal;
+                if (n.y < 0) n = -n;
+
+                if (n.y > 0.05f)
+                {
+                    grounded = true;
+                    if (Mathf.Abs(n.x) > 0.01f)
+                    {
+                        slope = true;
+                        bestNormal = n;
+                        break;
+                    }
+                    else
+                    {
+                        bestNormal = n;
+                    }
+                }
+            }
+        }
+
+        if (!grounded && groundCheck != null)
+        {
+            grounded = Physics2D.OverlapBox(groundCheck.position, groundCheckSize, 0f, groundLayer)
+                    || Physics2D.OverlapCircle(groundCheck.position, slopeCheckRadius, groundLayer);
+        }
+
+        isGrounded = grounded;
+        isOnSlope = slope;
+        slopeNormal = bestNormal;
+    }
+
     private void CheckSlope()
     {
-        if (groundCheck == null) return;
-
-        RaycastHit2D hit = Physics2D.Raycast(groundCheck.position, Vector2.down, groundCheckSize.y * 2f + 0.2f, groundLayer);
-        if (hit)
-        {
-            slopeNormal = hit.normal;
-            isOnSlope = slopeNormal != Vector2.up && Mathf.Abs(slopeNormal.x) > 0.01f;
-        }
-        else
-        {
-            isOnSlope = false;
-            slopeNormal = Vector2.up;
-        }
+        // Unified into UpdateGroundedState using rb.GetContacts
     }
 
     public void Move(InputAction.CallbackContext context) 
@@ -161,8 +207,19 @@ public class PlayerMovement : MonoBehaviour
             return;
 
         isGrounded = false;
+        isOnSlope = false;
+        jumpCooldownTimer = 0.2f;
         animator.SetTrigger("Jump");
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+
+        if (isOnSlope)
+        {
+            float upVelocity = Mathf.Max(jumpForce, rb.linearVelocity.y + jumpForce * 0.5f);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.2f, upVelocity);
+        }
+        else
+        {
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+        }
     }
 
     public void Trick(InputAction.CallbackContext context)
@@ -172,7 +229,14 @@ public class PlayerMovement : MonoBehaviour
 
         if (!isGrounded)
         {
-            string controlName = context.control != null ? context.control.name : "Trick";
+            string controlName = context.control != null ? context.control.name : "";
+
+            bool isArrowKey = controlName.Equals("upArrow", System.StringComparison.OrdinalIgnoreCase)
+                           || controlName.Equals("downArrow", System.StringComparison.OrdinalIgnoreCase)
+                           || controlName.Equals("leftArrow", System.StringComparison.OrdinalIgnoreCase)
+                           || controlName.Equals("rightArrow", System.StringComparison.OrdinalIgnoreCase);
+
+            if (!isArrowKey) return;
 
             if (trickController == null)
             {
@@ -205,10 +269,6 @@ public class PlayerMovement : MonoBehaviour
             {
                 // 360 Spin (Y rotation -360)
                 spinCoroutine = StartCoroutine(PerformYSpin(-1f));
-            }
-            else
-            {
-                spinCoroutine = StartCoroutine(PerformYSpin(1f));
             }
 
             if (trickController != null)
@@ -266,15 +326,12 @@ public class PlayerMovement : MonoBehaviour
         if (groundCheck != null)
         {
             Gizmos.color = Color.yellow;
-            Gizmos.DrawWireCube(groundCheck.position, groundCheckSize);
-        }
-    }
+            Gizmos.matrix = Matrix4x4.TRS(groundCheck.position, groundCheck.rotation, Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, groundCheckSize);
 
-    public void UpdateGroundedState()
-    {
-        if (groundCheck != null)
-        {
-            isGrounded = Physics2D.OverlapBox(groundCheck.position, groundCheckSize, 0f, groundLayer);
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(Vector3.zero, slopeCheckRadius);
+            Gizmos.matrix = Matrix4x4.identity;
         }
     }
 
