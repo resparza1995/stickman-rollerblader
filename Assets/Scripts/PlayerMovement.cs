@@ -21,6 +21,10 @@ public class PlayerMovement : MonoBehaviour
     private Animator animator;
     private TricksSystem.TrickController trickController;
 
+    [Header("Grind Settings")]
+    public bool isGrinding;
+    public int currentGrindType = 1; // 1: Royal, 2: Savannah, 3: Soul
+
     [Header("Slope Settings")]
     public float slopeRotationSpeed = 25f;
     private Vector2 slopeNormal;
@@ -52,12 +56,14 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         checkFlip();
+        CheckGrindInput();
         
         if (jumpCooldownTimer > 0f)
         {
             jumpCooldownTimer -= Time.deltaTime;
             isGrounded = false;
             isOnSlope = false;
+            isGrinding = false;
         }
         else
         {
@@ -65,9 +71,47 @@ public class PlayerMovement : MonoBehaviour
         }
 
         UpdateRampBoostTimer();
-        animator.SetFloat("Horizontal", Mathf.Abs(horizontalMovement));
-        animator.SetFloat("VerticalVelocity", rb.linearVelocity.y);
-        animator.SetBool("IsGrounded", isGrounded);
+        if (animator != null)
+        {
+            animator.SetFloat("Horizontal", Mathf.Abs(horizontalMovement));
+            animator.SetFloat("VerticalVelocity", rb.linearVelocity.y);
+            animator.SetBool("IsGrounded", isGrounded);
+            animator.SetBool("IsGrinding", isGrinding);
+        }
+    }
+
+    private void CheckGrindInput()
+    {
+        if (Keyboard.current == null) return;
+
+        if (Keyboard.current.digit1Key.wasPressedThisFrame || Keyboard.current.numpad1Key.wasPressedThisFrame)
+        {
+            SetGrindStance(1, "Royal");
+        }
+        else if (Keyboard.current.digit2Key.wasPressedThisFrame || Keyboard.current.numpad2Key.wasPressedThisFrame)
+        {
+            SetGrindStance(2, "Savannah");
+        }
+        else if (Keyboard.current.digit3Key.wasPressedThisFrame || Keyboard.current.numpad3Key.wasPressedThisFrame)
+        {
+            SetGrindStance(3, "Soul");
+        }
+    }
+
+    private void SetGrindStance(int type, string trickName)
+    {
+        currentGrindType = type;
+        if (!isGrinding) return;
+
+        if (animator != null)
+        {
+            animator.SetTrigger(trickName);
+            animator.Play(trickName);
+        }
+        if (trickController != null)
+        {
+            trickController.TryExecuteTrick(trickName, TricksSystem.TrickType.Grind);
+        }
     }
 
     private void LateUpdate()
@@ -80,7 +124,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (isSpinning) return;
 
-        if (isGrounded && isOnSlope)
+        if (isGrounded && (isOnSlope || isGrinding))
         {
             float targetAngle = Mathf.Atan2(-slopeNormal.x, slopeNormal.y) * Mathf.Rad2Deg;
             Quaternion targetRotation = Quaternion.Euler(0f, 0f, targetAngle);
@@ -115,7 +159,21 @@ public class PlayerMovement : MonoBehaviour
     {
         rb.angularVelocity = 0f;
 
-        if (isGrounded && isOnSlope)
+        if (isGrinding)
+        {
+            rb.gravityScale = 0f;
+            float moveDir = horizontalMovement != 0 ? horizontalMovement : (transform.localScale.x > 0 ? 1f : -1f);
+            if (isOnSlope)
+            {
+                Vector2 slopeDirection = new Vector2(slopeNormal.y, -slopeNormal.x);
+                rb.linearVelocity = slopeDirection * (moveDir * moveSpeed);
+            }
+            else
+            {
+                rb.linearVelocity = new Vector2(moveDir * moveSpeed, 0f);
+            }
+        }
+        else if (isGrounded && isOnSlope)
         {
             rb.gravityScale = 0f;
             Vector2 slopeDirection = new Vector2(slopeNormal.y, -slopeNormal.x);
@@ -132,7 +190,7 @@ public class PlayerMovement : MonoBehaviour
             rb.linearVelocity = new Vector2(horizontalMovement * moveSpeed, rb.linearVelocity.y);
         }
 
-        if (!isGrounded && rb.linearVelocity.y < 0)
+        if (!isGrounded && !isGrinding && rb.linearVelocity.y < 0)
         {
             rb.linearVelocity += Vector2.up * (Physics2D.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime);
         }
@@ -145,6 +203,7 @@ public class PlayerMovement : MonoBehaviour
         bool grounded = false;
         bool slope = false;
         bool halfpipe = false;
+        bool grinding = false;
         Vector2 bestNormal = Vector2.up;
 
         if (rb != null)
@@ -159,9 +218,16 @@ public class PlayerMovement : MonoBehaviour
                 if (n.y > 0.05f)
                 {
                     grounded = true;
-                    if (cp.collider != null && cp.collider.CompareTag("Halfpipe"))
+                    if (cp.collider != null)
                     {
-                        halfpipe = true;
+                        if (cp.collider.CompareTag("Halfpipe"))
+                        {
+                            halfpipe = true;
+                        }
+                        if (cp.collider.CompareTag("Rail") || cp.collider.GetComponent<ObstaclesSystem.IRailObstacle>() != null)
+                        {
+                            grinding = true;
+                        }
                     }
 
                     if (Mathf.Abs(n.x) > 0.01f)
@@ -188,12 +254,35 @@ public class PlayerMovement : MonoBehaviour
                 {
                     halfpipe = true;
                 }
+                if (hit.CompareTag("Rail") || hit.GetComponent<ObstaclesSystem.IRailObstacle>() != null)
+                {
+                    grinding = true;
+                }
+            }
+        }
+
+        if (!isGrinding && grinding)
+        {
+            string trickName = currentGrindType == 2 ? "Savannah" : (currentGrindType == 3 ? "Soul" : "Royal");
+            if (animator != null)
+            {
+                animator.SetTrigger(trickName);
+                animator.Play(trickName);
+            }
+            if (trickController == null)
+            {
+                trickController = GetComponent<TricksSystem.TrickController>();
+            }
+            if (trickController != null)
+            {
+                trickController.TryExecuteTrick(trickName, TricksSystem.TrickType.Grind);
             }
         }
 
         isGrounded = grounded;
         isOnSlope = slope;
         isHalfpipe = halfpipe;
+        isGrinding = grinding;
         slopeNormal = bestNormal;
 
         if (isGrounded)
@@ -222,7 +311,12 @@ public class PlayerMovement : MonoBehaviour
             canRampBoost = false;
             rampBoostTimer = 0f;
             isGrounded = false;
-            animator.SetTrigger("Jump");
+            isGrinding = false;
+            if (animator != null)
+            {
+                animator.SetTrigger("Jump");
+                animator.Play("Jump");
+            }
 
             float facingDirection = transform.localScale.x > 0 ? 1f : -1f;
             Vector2 boostVelocity = new Vector2(currentRampBoostImpulse.x * facingDirection, currentRampBoostImpulse.y);
@@ -230,7 +324,7 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        if (!isGrounded)
+        if (!isGrounded && !isGrinding)
             return;
 
         bool wasSlope = isOnSlope;
@@ -238,7 +332,12 @@ public class PlayerMovement : MonoBehaviour
 
         isGrounded = false;
         isOnSlope = false;
-        animator.SetTrigger("Jump");
+        isGrinding = false;
+        if (animator != null)
+        {
+            animator.SetTrigger("Jump");
+            animator.Play("Jump");
+        }
 
         if (wasSlope && wasHalfpipe)
         {
@@ -266,10 +365,33 @@ public class PlayerMovement : MonoBehaviour
         if (!context.performed)
             return;
 
+        string controlName = context.control != null ? context.control.name : "";
+
+        if (isGrinding)
+        {
+            if (controlName.Equals("1", System.StringComparison.OrdinalIgnoreCase)
+             || controlName.Equals("digit1", System.StringComparison.OrdinalIgnoreCase)
+             || controlName.Equals("numpad1", System.StringComparison.OrdinalIgnoreCase))
+            {
+                SetGrindStance(1, "Royal");
+            }
+            else if (controlName.Equals("2", System.StringComparison.OrdinalIgnoreCase)
+                  || controlName.Equals("digit2", System.StringComparison.OrdinalIgnoreCase)
+                  || controlName.Equals("numpad2", System.StringComparison.OrdinalIgnoreCase))
+            {
+                SetGrindStance(2, "Savannah");
+            }
+            else if (controlName.Equals("3", System.StringComparison.OrdinalIgnoreCase)
+                  || controlName.Equals("digit3", System.StringComparison.OrdinalIgnoreCase)
+                  || controlName.Equals("numpad3", System.StringComparison.OrdinalIgnoreCase))
+            {
+                SetGrindStance(3, "Soul");
+            }
+            return;
+        }
+
         if (!isGrounded)
         {
-            string controlName = context.control != null ? context.control.name : "";
-
             bool isArrowKey = controlName.Equals("upArrow", System.StringComparison.OrdinalIgnoreCase)
                            || controlName.Equals("downArrow", System.StringComparison.OrdinalIgnoreCase)
                            || controlName.Equals("leftArrow", System.StringComparison.OrdinalIgnoreCase)
