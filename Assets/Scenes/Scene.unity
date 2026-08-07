@@ -827,9 +827,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   moveSpeed: 15
-  horizontalMovement: 0
   jumpForce: 10
-  rampJumpForce: 12
+  rampJumpForce: 15
   fallMultiplier: 2.5
   groundCheck: {fileID: 1820966476}
   groundCheckRadius: 0.68
@@ -842,7 +841,13 @@ MonoBehaviour:
   grindSparksEffect: {fileID: 1061278903}
   slopeRotationSpeed: 15
   spinDuration: 0.5
+  useMapBounds: 1
+  backgroundBounds: {fileID: 0}
+  minX: -10
+  maxX: 120
+  paddingX: 0.5
   speedEffect: {fileID: 0}
+  horizontalMovement: 0
 --- !u!50 &881156018
 Rigidbody2D:
   serializedVersion: 5
@@ -858,7 +863,7 @@ Rigidbody2D:
   m_Mass: 1.2
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 2
+  m_GravityScale: 2.5
   m_Material: {fileID: 6200000, guid: 9a766d6e64db3b645b010297d8079dd4, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
