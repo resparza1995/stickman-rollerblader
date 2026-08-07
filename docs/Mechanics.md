@@ -11,6 +11,16 @@ When the player is grounded on an inclined surface (`isGrounded && isOnSlope`), 
 - Normal inversion correction: Detects negative scale colliders (`slopeNormal.y < 0 => slopeNormal = -slopeNormal`).
 - Slope movement velocity is calculated tangentially along `(slopeNormal.y, -slopeNormal.x)`.
 
+### Projected Slope Speed Capping (`maxSlopeSpeed`)
+To prevent "catapulting" physics artifacts when landing from high vertical jumps onto steep curves:
+- `projectedSpeed` is calculated via `Vector2.Dot(rb.linearVelocity, slopeDirection)`.
+- Speed magnitude is capped at `maxSlopeSpeed = moveSpeed * 2f` in `FixedUpdate`, ensuring landing momentum smoothly converts into slope movement without explosive physics launches.
+
+### Map Bounds Clamping (`ClampPositionToBounds`)
+To prevent the skater from escaping level bounds during high jumps or high-speed launches:
+- `CalculateMapBounds()` determines `minX` and `maxX` boundaries using the `SpriteRenderer` bounds of the background artwork.
+- In `LateUpdate()`, `ClampPositionToBounds()` clamps `transform.position.x` between `minX` and `maxX` and zeroes outward Rigidbody2D velocity if boundary contact occurs.
+
 ### Smooth Rotation (`UpdateSlopeRotation`)
 To align the skater's body perpendicularly with curved or angled ramps:
 1. Target angle calculation: `targetAngle = Mathf.Atan2(-slopeNormal.x, slopeNormal.y) * Mathf.Rad2Deg`.
@@ -51,11 +61,16 @@ Allows the player to gain extra height and speed by pressing `Space` right at th
 
 ---
 
-## 4. Camera Systems (`CameraFollow.cs` & `VintageFilter.cs`)
+## 4. Camera Systems & UI Flow (`CameraFollow.cs`, `ScoreUI.cs`, `CountdownManager.cs`)
 
 ### Background Bounds & Selective Upward Y Tracking (`CameraFollow.cs`)
 - **Horizontal Clamping**: Automatically calculates `minX` and `maxX` boundaries using `SpriteRenderer` background bounds and camera orthographic aspect ratio to prevent showing out-of-map background edges.
 - **Selective Y Tracking (`followYAboveFixed`)**: Keeps camera Y locked at `fixedY = -0.47f` on the ground, but smoothly follows the player upwards (`Mathf.Max(fixedY, targetY)`) during high vertical air launches.
+
+### Initial Pre-Match Menu & UI Sorting Order (`ScoreUI.cs`)
+- **Pre-Match Guide Card**: Displays the "HOW TO PLAY" instruction card with centered control lists, trick points, and game goal details (`ShowInitialMenu`).
+- **Canvas Hierarchy**: `ScoreCanvas` is configured with `sortingOrder = 120`, placing it above `CountdownCanvas` (`sortingOrder = 100`) to guarantee UI raycasts and button click responsiveness.
+- **Match Start Trigger**: Clicking "READY!" destroys the instruction menu and calls `CountdownManager.Instance.StartCountdown()` to trigger the iris transition and 3-2-1 countdown.
 
 ### Vintage Camera Post-Processing Filter (`VintageFilter.cs` & `VintageEffect.shader`)
 Custom full-screen camera Image Effect featuring:
@@ -77,7 +92,7 @@ Custom full-screen camera Image Effect featuring:
 ### Air Tricks & Scoring Integration
 - **Execution Trigger**: Activated when an Arrow key is pressed while airborne (`!isGrounded`).
 - **Animation & Physics**: Triggers the `AirRotate` animator state (`AirRotate.anim`) and runs dynamic rotation coroutines (`PerformYSpin` for Y-axis spins, `PerformZFlip` for Z-axis flips) over `spinDuration`.
-- **Scoring**: Processed via `TrickController.TryExecuteTrick`, granting score points (e.g., `+150 pts` for `Air360`) upon successful airborne execution.
+- **Scoring**: Processed via `TrickController.TryExecuteTrick`, granting score points (e.g., `+450 pts` for `Backflip`) upon successful airborne execution.
 
 ---
 
@@ -89,10 +104,11 @@ When the player collides with an object tagged `"Rail"` or implementing `IRailOb
 2. Gravity scale is set to `0f` in `FixedUpdate` so the player locks smoothly onto the rail line.
 3. Player horizontal velocity slides tangentially along the rail slope normal.
 
-### Grind Stances & Controls
-- **Keys `1` / `Numpad1`**: Switches stance to **Royal** (`Royal.anim`, `+200 pts`).
-- **Keys `2` / `Numpad2`**: Switches stance to **Savannah** (`Savannah.anim`, `+300 pts`).
-- **Keys `3` / `Numpad3`**: Switches stance to **Soul** (`Soul.anim`, `+250 pts`).
+### Grind Stances & Airborne Pre-Selection (Input Buffering)
+- **Keys `1` / `Numpad1`**: Sets stance to **Royal** (`Royal.anim`, `+200 pts`).
+- **Keys `2` / `Numpad2`**: Sets stance to **Savannah** (`Savannah.anim`, `+250 pts`).
+- **Keys `3` / `Numpad3`**: Sets stance to **Soul** (`Soul.anim`, `+300 pts`).
+- **Airborne Pre-Selection**: Pressing `1`, `2`, or `3` while airborne buffers `currentGrindType = type`. Upon landing on a rail, `UpdateGroundedState()` immediately executes the pre-selected grind stance and triggers its respective animation and scoring.
 
 ### Rail Exit Mechanics
 - **Jump Exit**: Pressing `Space` / `W` while grinding sets `isGrinding = false` and `isGrounded = false`, triggering the `Jump` animation immediately.

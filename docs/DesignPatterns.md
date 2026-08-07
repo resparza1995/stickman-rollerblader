@@ -4,19 +4,19 @@ This document outlines the primary software design patterns implemented in **Sti
 
 ---
 
-## 1. State Pattern (Finite State Machine)
+## 1. Consolidated State Management (Option B Architecture)
 
 ### Purpose
-To eliminate massive `switch-case` blocks and boolean flags inside player movement code by encapsulating state-specific logic into dedicated classes.
+To avoid over-engineering and runtime allocations from polymorphic state objects in a self-contained game scope. Encapsulates state transitions (`isGrounded`, `isOnSlope`, `isGrinding`, `isVerticalAir`) cleanly inside `PlayerMovement.cs`.
 
 ### Implementation
-- **Context**: `PlayerStateMachine`
-- **Interface**: `IPlayerState`
-- **Concrete States**: `GroundedState`, `AirborneState`, `GrindingState`
+- **Controller**: `PlayerMovement.cs`
+- **Internal States**: Evaluated per frame in `UpdateGroundedState()` via Rigidbody2D contact normals and ground check overlaps.
+- **Dead Code Purge**: Unused polymorphic state interfaces (`IPlayerState`, `PlayerStateMachine`, etc.) were removed under Option B refactoring.
 
 ### Benefits
-- **Single Responsibility Principle (SRP)**: Each state class manages only its own physics and input behaviors.
-- **Ease of Expansion**: Adding new player states (e.g., `RagdollState`, `CrouchState`) requires creating a new `IPlayerState` implementation without modifying existing states.
+- **Performance**: Zero heap allocations per state change.
+- **Direct Access**: Direct cached access to Animator hashes and Rigidbody2D velocity vectors without indirection.
 
 ---
 
@@ -35,7 +35,19 @@ To separate trick definitions, scoring parameters, and animation triggers from C
 
 ---
 
-## 3. Interface-Based Polymorphism (Obstacle System)
+## 3. Flyweight & Object Caching Pattern (Performance Optimization)
+
+### Purpose
+To prevent GPU VRAM memory leaks and CPU garbage collection spikes caused by runtime string lookups or texture creation.
+
+### Implementation
+- **`ScoreUI.cs`**: Static `Dictionary<string, Sprite> spriteCache` reuses dynamically generated rounded UI textures across scene reloads.
+- **`PlayerMovement.cs`**: `Animator.StringToHash` pre-computes static integer hashes for all animation parameters (`AnimHorizontal`, `AnimIsGrinding`, `AnimRoyal`, etc.).
+- **`VintageFilter.cs`**: `Shader.PropertyToID` pre-computes static IDs for all shader uniforms (`_SepiaAmount`, `_Desaturation`, etc.).
+
+---
+
+## 4. Interface-Based Polymorphism (Obstacle System)
 
 ### Purpose
 To decouple player physics code from concrete environment game objects.
@@ -49,7 +61,7 @@ To decouple player physics code from concrete environment game objects.
 
 ---
 
-## 4. Observer Pattern (Event-Driven Architecture)
+## 5. Observer Pattern (Event-Driven Architecture)
 
 ### Purpose
 To decouple core gameplay physics from secondary systems such as User Interface (UI), Sound Effects (SFX), and Particle Effects (VFX).

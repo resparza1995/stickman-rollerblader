@@ -6,19 +6,19 @@ This document details the high-level software architecture, component organizati
 
 ## 1. System Overview
 
-The application architecture is structured into decoupled modules to promote maintainability, scalability, and adherence to SOLID principles:
+The application architecture is structured into modular components to promote maintainability, performance, and clear separation of concerns:
 
 ```
                   ┌────────────────────────┐
                   │    Player Controller   │
-                  │ (PlayerStateMachine)   │
+                  │   (PlayerMovement.cs)  │
                   └───────────┬────────────┘
                               │
          ┌────────────────────┼────────────────────┐
          ▼                    ▼                    ▼
 ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────┐
-│ Player States   │  │ Obstacle System  │  │  Trick System   │
-│ (Grounded/Air)  │  │ (Ramp/Rail Interfaces) │ (ScriptableObj)│
+┌ Internal States ┐  │ Obstacle System  │  │  Trick System   │
+│(Ground/Air/Grind│  │ (Ramp/Rail Interfaces) │ (ScriptableObj)│
 └─────────────────┘  └──────────────────┘  └─────────────────┘
 ```
 
@@ -26,18 +26,15 @@ The application architecture is structured into decoupled modules to promote mai
 
 ## 2. Core Modules
 
-### 2.1 Player Module (`Assets/Scripts/Player/`)
-- **`PlayerStateMachine`**: Manages state transitions and delegates `Update` / `FixedUpdate` calls to the active state.
-- **`IPlayerState`**: State interface requiring lifecycle methods (`Enter`, `Exit`, `LogicUpdate`, `PhysicsUpdate`).
-- **Concrete States**:
-  - `GroundedState`: Handles surface movement, slope normal detection, and jump initiation.
-  - `AirborneState`: Handles airborne movement, extra fall gravity, and trick input listening.
-  - `GrindingState`: Handles rail attachment, rail directional velocity, and balance mechanics.
+### 2.1 Player Module (`Assets/Scripts/`)
+- **`PlayerMovement.cs`**: Consolidated player controller managing input handling, Physics2D raycasting & contact detection, slope vector alignment, halfpipe vertical air trajectory, map boundary clamping, and grind stance pre-selection. Dead state machine classes (`PlayerStateMachine`, `IPlayerState`, etc.) were purged under Option B optimization.
+- **Cached Hashes & Component References**: Caches all `Animator.StringToHash` IDs and `PlayerAudio` references in `Start()` to eliminate runtime string lookup overhead and allocations.
 
-### 2.2 Movement, Camera & Post-Processing (`Assets/Scripts/` & `Assets/Shaders/`)
-- **`PlayerMovement.cs`**: Handles Rigidbody2D contact detection, slope vector alignment, halfpipe vertical air trajectory, and jump timers.
+### 2.2 Movement, Camera, UI & Post-Processing (`Assets/Scripts/` & `Assets/Shaders/`)
 - **`CameraFollow.cs`**: Implements 2D camera tracking using `Vector3.SmoothDamp`, background bounds clamping, and selective upward Y-tracking (`followYAboveFixed`).
-- **`VintageFilter.cs` & `VintageEffect.shader`**: Full-screen post-processing filter providing Sepia tinting, Vignette, Desaturation, and real-time Film Grain.
+- **`VintageFilter.cs` & `VintageEffect.shader`**: Full-screen post-processing filter providing Sepia tinting, Vignette, Desaturation, and real-time Film Grain using cached shader property IDs (`Shader.PropertyToID`).
+- **`ScoreUI.cs`**: Dynamic HUD and initial pre-match menu controller. Includes procedural rounded UI texture generation with a static `Dictionary<string, Sprite>` cache to prevent GPU VRAM memory leaks. Set to `sortingOrder = 120` to render above countdown transitions.
+- **`CountdownManager.cs`**: Iris transition and match countdown manager. Controls pre-match freeze state and triggers game start upon clicking "READY!".
 
 ### 2.3 Obstacle System (`Assets/Scripts/Obstacles/`)
 - **`IRampObstacle`**: Interface defining launch impulse vectors and boost trigger timing windows.
@@ -55,8 +52,8 @@ The application architecture is structured into decoupled modules to promote mai
 
 ## 3. Data Flow & Execution Order
 
-1. **Input Stage**: `PlayerInput` triggers input callbacks (`Move`, `Jump`) on `PlayerMovement`.
-2. **Detection Stage**: `Update()` performs Raycasts (`CheckSlope`) and overlap box checks (`UpdateGroundedState`).
-3. **Physics Stage**: `FixedUpdate()` applies slope-aligned velocity or airborne gravity.
-4. **State Transition Stage**: `PlayerStateMachine` switches active states based on ground contact or rail detection.
-5. **Render & Camera Stage**: `LateUpdate()` executes `CameraFollow.cs` to smoothly position the camera after player physics updates.
+1. **Pre-Match Stage**: `ScoreUI` presents the initial "HOW TO PLAY" instruction panel (`ShowInitialMenu`). `CountdownManager` overlay remains hidden until the player clicks "READY!".
+2. **Input Stage**: `PlayerInput` triggers input callbacks (`Move`, `Jump`, `Trick`) on `PlayerMovement`.
+3. **Detection Stage**: `Update()` performs contact detection (`UpdateGroundedState`) and updates animation parameters.
+4. **Physics Stage**: `FixedUpdate()` applies slope-aligned velocity, airborne fall multiplier, and projected slope speed capping (`maxSlopeSpeed`).
+5. **Boundary Stage**: `LateUpdate()` clamps player position within background bounds (`ClampPositionToBounds`) and updates camera position (`CameraFollow.cs`).
