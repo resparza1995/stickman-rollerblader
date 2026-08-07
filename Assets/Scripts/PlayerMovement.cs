@@ -193,8 +193,22 @@ public class PlayerMovement : MonoBehaviour
         else if (isGrounded && isOnSlope)
         {
             rb.gravityScale = 0f;
-            Vector2 slopeDirection = new Vector2(slopeNormal.y, -slopeNormal.x);
-            rb.linearVelocity = slopeDirection * (horizontalMovement * moveSpeed);
+            Vector2 slopeDirection = new Vector2(slopeNormal.y, -slopeNormal.x).normalized;
+            float projectedSpeed = Vector2.Dot(rb.linearVelocity, slopeDirection);
+
+            float speed;
+            if (horizontalMovement != 0)
+            {
+                float directionSign = Mathf.Sign(horizontalMovement);
+                float speedMag = Mathf.Max(moveSpeed, Mathf.Abs(projectedSpeed));
+                speed = directionSign * speedMag;
+            }
+            else
+            {
+                speed = projectedSpeed;
+            }
+
+            rb.linearVelocity = slopeDirection * speed;
         }
         else if (isVerticalAir)
         {
