@@ -77,10 +77,28 @@ public class PlayerMovement : MonoBehaviour
     }
 
     /// <summary>
+    /// Checks if player movement and actions are currently locked by the CountdownManager.
+    /// </summary>
+    public bool IsMovementLocked()
+    {
+        return UISystem.CountdownManager.Instance != null && UISystem.CountdownManager.Instance.IsCountingDown;
+    }
+
+    /// <summary>
     /// Per-frame update for input checks, cooldown timers, and animator parameter synchronization.
     /// </summary>
     void Update()
     {
+        if (IsMovementLocked())
+        {
+            horizontalMovement = 0f;
+            if (animator != null)
+            {
+                animator.SetFloat("Horizontal", 0f);
+            }
+            return;
+        }
+
         checkFlip();
         CheckGrindInput();
         
@@ -168,7 +186,7 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void CheckGrindInput()
     {
-        if (Keyboard.current == null) return;
+        if (Keyboard.current == null || IsMovementLocked()) return;
 
         if (Keyboard.current.digit1Key.wasPressedThisFrame || Keyboard.current.numpad1Key.wasPressedThisFrame)
         {
@@ -406,12 +424,17 @@ public class PlayerMovement : MonoBehaviour
 
     public void Move(InputAction.CallbackContext context) 
     {
+        if (IsMovementLocked())
+        {
+            horizontalMovement = 0f;
+            return;
+        }
         horizontalMovement = context.ReadValue<Vector2>().x;
     }
 
     public void Jump(InputAction.CallbackContext context) 
     {
-        if (!context.performed)
+        if (!context.performed || IsMovementLocked())
             return;
 
         if (canRampBoost)
@@ -470,7 +493,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void Trick(InputAction.CallbackContext context)
     {
-        if (!context.performed)
+        if (!context.performed || IsMovementLocked())
             return;
 
         string controlName = context.control != null ? context.control.name : "";
