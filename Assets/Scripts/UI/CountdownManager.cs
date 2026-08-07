@@ -99,10 +99,44 @@ namespace UISystem
                 return;
             }
             Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+
+        private void OnEnable()
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnDisable()
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+
+        private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            RestartCountdown();
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+            {
+                Instance = null;
+            }
         }
 
         private void Start()
         {
+            EnsureUIReferences();
+            StartCoroutine(RunCountdownRoutine());
+        }
+
+        /// <summary>
+        /// Restarts the countdown routine on scene reload.
+        /// </summary>
+        public void RestartCountdown()
+        {
+            StopAllCoroutines();
             EnsureUIReferences();
             StartCoroutine(RunCountdownRoutine());
         }
@@ -122,6 +156,7 @@ namespace UISystem
                 canvasObj.AddComponent<CanvasScaler>();
                 canvasObj.AddComponent<GraphicRaycaster>();
             }
+            DontDestroyOnLoad(canvasObj);
 
             // Create Dark Overlay Image for expanding circle transition if not assigned
             if (overlayImage == null)
@@ -179,7 +214,7 @@ namespace UISystem
                 return;
             }
 
-            tmpText = FindAnyObjectByType<TextMeshProUGUI>();
+            tmpText = canvasObj.GetComponentInChildren<TextMeshProUGUI>();
             if (tmpText != null)
             {
                 textRectTransform = tmpText.rectTransform;
@@ -187,7 +222,7 @@ namespace UISystem
                 return;
             }
 
-            legacyText = FindAnyObjectByType<Text>();
+            legacyText = canvasObj.GetComponentInChildren<Text>();
             if (legacyText != null)
             {
                 textRectTransform = legacyText.rectTransform;

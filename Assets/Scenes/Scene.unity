@@ -326,7 +326,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 2
   m_MaskInteraction: 0
   m_Sprite: {fileID: -8865374420282813445, guid: 99c646dc71d18bb4abca8ecfb1913d26, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -367,7 +367,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2400137684153887753, guid: 7fbc33b103e3525468c6a6b22e522e79, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 63.85
+      value: 60.93
       objectReference: {fileID: 0}
     - target: {fileID: 2400137684153887753, guid: 7fbc33b103e3525468c6a6b22e522e79, type: 3}
       propertyPath: m_LocalPosition.y
@@ -858,7 +858,7 @@ Rigidbody2D:
   m_Mass: 1.2
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 1.5
+  m_GravityScale: 2
   m_Material: {fileID: 6200000, guid: 9a766d6e64db3b645b010297d8079dd4, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
@@ -10963,7 +10963,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 2
   m_MaskInteraction: 0
   m_Sprite: {fileID: -8865374420282813445, guid: 99c646dc71d18bb4abca8ecfb1913d26, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -11061,7 +11061,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2400137684153887753, guid: 7fbc33b103e3525468c6a6b22e522e79, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 11.17
+      value: 18.8
       objectReference: {fileID: 0}
     - target: {fileID: 2400137684153887753, guid: 7fbc33b103e3525468c6a6b22e522e79, type: 3}
       propertyPath: m_LocalPosition.y
@@ -11155,6 +11155,10 @@ PrefabInstance:
     - target: {fileID: 1880972919928190157, guid: 258c3a20c5e075a40b769bc56bc8d556, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2658864964044489743, guid: 258c3a20c5e075a40b769bc56bc8d556, type: 3}
+      propertyPath: m_SortingOrder
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7407536283006752779, guid: 258c3a20c5e075a40b769bc56bc8d556, type: 3}
       propertyPath: m_Name

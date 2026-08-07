@@ -29,7 +29,6 @@ namespace TricksSystem
 
         private void ExecuteTrick(TrickData trick)
         {
-            Debug.Log($"Executed Trick: {trick.trickName} (+{trick.scorePoints} pts)");
             OnTrickExecuted?.Invoke(trick);
         }
     }

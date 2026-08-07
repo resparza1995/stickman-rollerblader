@@ -215,9 +215,17 @@ public class PlayerMovement : MonoBehaviour
             animator.SetTrigger(trickName);
             animator.Play(trickName);
         }
+
+        bool executed = false;
         if (trickController != null)
         {
-            trickController.TryExecuteTrick(trickName, TricksSystem.TrickType.Grind);
+            executed = trickController.TryExecuteTrick(trickName, TricksSystem.TrickType.Grind);
+        }
+
+        if (!executed && UISystem.ScoreManager.Instance != null)
+        {
+            int pts = type == 1 ? 200 : (type == 2 ? 250 : 300);
+            UISystem.ScoreManager.Instance.AddScore(trickName + " Grind", pts);
         }
     }
 
@@ -542,34 +550,43 @@ public class PlayerMovement : MonoBehaviour
                 StopCoroutine(spinCoroutine);
             }
 
+            string airTrickName = "360";
+            int basePoints = 300;
+
             if (controlName.Equals("upArrow", System.StringComparison.OrdinalIgnoreCase))
             {
-                // Backflip (Z rotation +360)
+                airTrickName = "Backflip";
+                basePoints = 450;
                 spinCoroutine = StartCoroutine(PerformZFlip(1f));
             }
             else if (controlName.Equals("downArrow", System.StringComparison.OrdinalIgnoreCase))
             {
-                // Frontflip (Z rotation -360)
+                airTrickName = "Frontflip";
+                basePoints = 450;
                 spinCoroutine = StartCoroutine(PerformZFlip(-1f));
             }
             else if (controlName.Equals("leftArrow", System.StringComparison.OrdinalIgnoreCase))
             {
-                // 360 Spin (Y rotation 360)
+                airTrickName = "360";
+                basePoints = 300;
                 spinCoroutine = StartCoroutine(PerformYSpin(1f));
             }
             else if (controlName.Equals("rightArrow", System.StringComparison.OrdinalIgnoreCase))
             {
-                // 360 Spin (Y rotation -360)
+                airTrickName = "360";
+                basePoints = 300;
                 spinCoroutine = StartCoroutine(PerformYSpin(-1f));
             }
 
+            bool executed = false;
             if (trickController != null)
             {
-                bool executed = trickController.TryExecuteTrick(controlName, TricksSystem.TrickType.Air);
-                if (!executed)
-                {
-                    trickController.TryExecuteTrick("AirRotate", TricksSystem.TrickType.Air);
-                }
+                executed = trickController.TryExecuteTrick(controlName, TricksSystem.TrickType.Air);
+            }
+
+            if (!executed && UISystem.ScoreManager.Instance != null)
+            {
+                UISystem.ScoreManager.Instance.AddScore(airTrickName, basePoints);
             }
         }
     }
