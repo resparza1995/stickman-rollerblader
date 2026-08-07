@@ -91,6 +91,10 @@ namespace UISystem
             }
         }
 
+        private AudioSource countdownAudioSource;
+        private AudioClip tickClip;
+        private AudioClip goClip;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -100,6 +104,13 @@ namespace UISystem
             }
             Instance = this;
             DontDestroyOnLoad(gameObject);
+
+            countdownAudioSource = gameObject.AddComponent<AudioSource>();
+            countdownAudioSource.playOnAwake = false;
+            countdownAudioSource.spatialBlend = 0f;
+
+            tickClip = GenerateTickClip();
+            goClip = GenerateGoClip();
         }
 
         private void OnEnable()
@@ -342,6 +353,7 @@ namespace UISystem
             for (int current = countdownFrom; current > 0; current--)
             {
                 UpdateText(current.ToString(), isGo: false);
+                if (countdownAudioSource != null && tickClip != null) countdownAudioSource.PlayOneShot(tickClip, 0.65f);
                 OnCountdownTick?.Invoke(current);
                 yield return StartCoroutine(AnimatePopScale(isGo: false));
                 yield return new WaitForSecondsRealtime(Mathf.Max(0f, 1.0f - popDuration));
@@ -349,6 +361,7 @@ namespace UISystem
 
             // GO! state
             UpdateText(goText, isGo: true);
+            if (countdownAudioSource != null && goClip != null) countdownAudioSource.PlayOneShot(goClip, 0.85f);
             IsCountingDown = false;
             HasFinished = true;
             OnCountdownFinished?.Invoke();
@@ -504,6 +517,60 @@ namespace UISystem
             }
 
             textRectTransform.localScale = Vector3.one;
+        }
+
+        /// <summary>
+        /// Generates a retro warm woodblock tick sound clip for 3.. 2.. 1..
+        /// </summary>
+        private static AudioClip GenerateTickClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.08f;
+            int sampleCount = (int)(sampleRate * duration);
+            float[] samples = new float[sampleCount];
+
+            for (int i = 0; i < sampleCount; i++)
+            {
+                float t = (float)i / sampleRate;
+                float progress = t / duration;
+
+                // 480Hz woodblock tone with quick decay
+                float wave = Mathf.Sin(2f * Mathf.PI * 480f * t) * 0.7f + Mathf.Sin(2f * Mathf.PI * 960f * t) * 0.3f;
+                float envelope = Mathf.Pow(1f - progress, 2.5f);
+
+                samples[i] = wave * envelope * 0.5f;
+            }
+
+            AudioClip clip = AudioClip.Create("CountdownTickSynth", sampleCount, 1, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
+        }
+
+        /// <summary>
+        /// Generates a triumphant 2-tone chord chime sound clip for GO!
+        /// </summary>
+        private static AudioClip GenerateGoClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.22f;
+            int sampleCount = (int)(sampleRate * duration);
+            float[] samples = new float[sampleCount];
+
+            for (int i = 0; i < sampleCount; i++)
+            {
+                float t = (float)i / sampleRate;
+                float progress = t / duration;
+
+                // 880Hz + 1320Hz chord chime (A5 + E6)
+                float wave = Mathf.Sin(2f * Mathf.PI * 880f * t) * 0.5f + Mathf.Sin(2f * Mathf.PI * 1320f * t) * 0.5f;
+                float envelope = (progress < 0.1f) ? (progress / 0.1f) : Mathf.Pow(1f - progress, 1.6f);
+
+                samples[i] = wave * envelope * 0.6f;
+            }
+
+            AudioClip clip = AudioClip.Create("CountdownGoSynth", sampleCount, 1, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
         }
     }
 }

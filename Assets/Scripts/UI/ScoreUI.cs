@@ -45,8 +45,11 @@ namespace UISystem
         // HUD Containers
         private GameObject scoreHUDContainer;
         private GameObject timerHUDContainer;
+        private GameObject muteHUDContainer;
         private TextMeshProUGUI matchTimerTMP;
+        private TextMeshProUGUI muteTextTMP;
         private Coroutine matchTimerCoroutine;
+        private bool isMuted = false;
 
         // End Game Summary Panel
         private GameObject summaryPanelObj;
@@ -111,6 +114,7 @@ namespace UISystem
 
             if (scoreHUDContainer != null) scoreHUDContainer.SetActive(false);
             if (timerHUDContainer != null) timerHUDContainer.SetActive(false);
+            if (muteHUDContainer != null) muteHUDContainer.SetActive(false);
             if (trickCardRect != null) trickCardRect.gameObject.SetActive(false);
             if (matchTimerTMP != null) matchTimerTMP.text = "00:30";
 
@@ -144,11 +148,12 @@ namespace UISystem
                 trickCardRect.gameObject.SetActive(false);
             }
 
-            // Initially hide Score & Timer HUD until countdown finishes
+            // Initially hide Score, Timer, and Mute HUD until countdown finishes
             if (CountdownManager.Instance != null && CountdownManager.Instance.IsCountingDown)
             {
                 if (scoreHUDContainer != null) scoreHUDContainer.SetActive(false);
                 if (timerHUDContainer != null) timerHUDContainer.SetActive(false);
+                if (muteHUDContainer != null) muteHUDContainer.SetActive(false);
             }
             else
             {
@@ -179,12 +184,28 @@ namespace UISystem
         }
 
         /// <summary>
+        /// Toggles master audio volume mute state and updates MUTE button text.
+        /// </summary>
+        public void ToggleMute()
+        {
+            isMuted = !isMuted;
+            AudioListener.volume = isMuted ? 0f : 1f;
+
+            if (muteTextTMP != null)
+            {
+                muteTextTMP.text = isMuted ? "<s>MUTE</s>" : "MUTE";
+                muteTextTMP.color = isMuted ? new Color(0.88f, 0.40f, 0.35f) : new Color(0.96f, 0.90f, 0.75f);
+            }
+        }
+
+        /// <summary>
         /// Starts the HUD display and 30s match timer when countdown reaches GO!
         /// </summary>
         private void HandleCountdownFinished()
         {
             if (scoreHUDContainer != null) scoreHUDContainer.SetActive(true);
             if (timerHUDContainer != null) timerHUDContainer.SetActive(true);
+            if (muteHUDContainer != null) muteHUDContainer.SetActive(true);
 
             if (matchTimerCoroutine != null) StopCoroutine(matchTimerCoroutine);
             matchTimerCoroutine = StartCoroutine(RunMatchTimerRoutine());
@@ -289,6 +310,52 @@ namespace UISystem
                 matchTimerTMP.outlineColor = new Color(0.08f, 0.06f, 0.04f, 0.9f);
 
                 if (customFont != null) matchTimerTMP.font = customFont;
+            }
+
+            // 3. Top Right MUTE HUD Button
+            if (muteHUDContainer == null)
+            {
+                muteHUDContainer = new GameObject("TopRightMuteHUD");
+                muteHUDContainer.transform.SetParent(mainCanvas.transform, false);
+
+                RectTransform rect = muteHUDContainer.AddComponent<RectTransform>();
+                rect.anchorMin = new Vector2(1, 1);
+                rect.anchorMax = new Vector2(1, 1);
+                rect.pivot = new Vector2(1, 1);
+                rect.anchoredPosition = new Vector2(-15, -12);
+                rect.sizeDelta = new Vector2(76, 32);
+
+                Image btnImg = muteHUDContainer.AddComponent<Image>();
+                btnImg.sprite = CreateRoundedSprite(76, 32, 10);
+                btnImg.color = new Color(0.16f, 0.13f, 0.10f, 0.90f);
+
+                Outline outline = muteHUDContainer.AddComponent<Outline>();
+                outline.effectColor = new Color(0.78f, 0.60f, 0.38f, 0.85f);
+                outline.effectDistance = new Vector2(1.2f, -1.2f);
+
+                Button btn = muteHUDContainer.AddComponent<Button>();
+                ColorBlock cb = btn.colors;
+                cb.normalColor = new Color(0.16f, 0.13f, 0.10f, 0.90f);
+                cb.highlightedColor = new Color(0.28f, 0.22f, 0.16f, 0.95f);
+                cb.pressedColor = new Color(0.10f, 0.08f, 0.06f, 0.95f);
+                btn.colors = cb;
+                btn.onClick.AddListener(ToggleMute);
+
+                GameObject txtObj = new GameObject("MuteText");
+                txtObj.transform.SetParent(muteHUDContainer.transform, false);
+                RectTransform txtRect = txtObj.AddComponent<RectTransform>();
+                txtRect.anchorMin = Vector2.zero;
+                txtRect.anchorMax = Vector2.one;
+                txtRect.offsetMin = Vector2.zero;
+                txtRect.offsetMax = Vector2.zero;
+
+                muteTextTMP = txtObj.AddComponent<TextMeshProUGUI>();
+                muteTextTMP.alignment = TextAlignmentOptions.Center;
+                muteTextTMP.fontSize = 13;
+                muteTextTMP.fontStyle = FontStyles.Bold;
+                muteTextTMP.color = isMuted ? new Color(0.88f, 0.40f, 0.35f) : new Color(0.96f, 0.90f, 0.75f);
+                muteTextTMP.text = isMuted ? "<s>MUTE</s>" : "MUTE";
+                if (customFont != null) muteTextTMP.font = customFont;
             }
 
             // 3. Dynamic Trick Popup Container (Behind Skater)

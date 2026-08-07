@@ -41,6 +41,7 @@ public class PlayerMovement : MonoBehaviour
     private float rampBoostTimer;
     private float initialGravityScale;
     private float jumpCooldownTimer;
+    private float grindStanceSwitchCooldownTimer;
     [Header("Air Rotation Settings")]
     public float spinDuration = 0.5f;
     private bool isSpinning;
@@ -66,6 +67,10 @@ public class PlayerMovement : MonoBehaviour
         }
 
         SetupGrindSparks();
+        if (GetComponent<PlayerSystem.PlayerAudio>() == null)
+        {
+            gameObject.AddComponent<PlayerSystem.PlayerAudio>();
+        }
     }
 
     private void SetupGrindSparks()
@@ -102,6 +107,11 @@ public class PlayerMovement : MonoBehaviour
         checkFlip();
         CheckGrindInput();
         
+        if (grindStanceSwitchCooldownTimer > 0f)
+        {
+            grindStanceSwitchCooldownTimer -= Time.deltaTime;
+        }
+
         if (jumpCooldownTimer > 0f)
         {
             jumpCooldownTimer -= Time.deltaTime;
@@ -207,8 +217,12 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void SetGrindStance(int type, string trickName)
     {
-        currentGrindType = type;
         if (!isGrinding) return;
+        if (currentGrindType == type) return;
+        if (grindStanceSwitchCooldownTimer > 0f) return;
+
+        grindStanceSwitchCooldownTimer = 0.2f;
+        currentGrindType = type;
 
         if (animator != null)
         {
@@ -478,6 +492,9 @@ public class PlayerMovement : MonoBehaviour
             animator.Play("Jump");
         }
 
+        PlayerSystem.PlayerAudio audio = GetComponent<PlayerSystem.PlayerAudio>();
+        if (audio != null) audio.PlayJumpSound();
+
         if (wasSlope && wasHalfpipe)
         {
             isVerticalAir = true;
@@ -531,6 +548,8 @@ public class PlayerMovement : MonoBehaviour
 
         if (!isGrounded)
         {
+            if (isSpinning) return;
+
             bool isArrowKey = controlName.Equals("upArrow", System.StringComparison.OrdinalIgnoreCase)
                            || controlName.Equals("downArrow", System.StringComparison.OrdinalIgnoreCase)
                            || controlName.Equals("leftArrow", System.StringComparison.OrdinalIgnoreCase)
@@ -544,11 +563,6 @@ public class PlayerMovement : MonoBehaviour
             }
 
             animator.SetTrigger("AirRotate");
-
-            if (spinCoroutine != null)
-            {
-                StopCoroutine(spinCoroutine);
-            }
 
             string airTrickName = "360";
             int basePoints = 300;
