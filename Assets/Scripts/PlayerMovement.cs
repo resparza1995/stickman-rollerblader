@@ -27,6 +27,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Grind Settings")]
     public bool isGrinding;
     public int currentGrindType = 1; // 1: Royal, 2: Savannah, 3: Soul
+    public ParticleSystem grindSparksEffect;
 
     [Header("Slope Settings")]
     public float slopeRotationSpeed = 25f;
@@ -44,6 +45,9 @@ public class PlayerMovement : MonoBehaviour
     public float spinDuration = 0.5f;
     private bool isSpinning;
     private Coroutine spinCoroutine;
+
+    [Header("Speed Visual Effects")]
+    public ParticleSystem speedEffect;
     
     void Start()
     {
@@ -54,6 +58,22 @@ public class PlayerMovement : MonoBehaviour
         {
             initialGravityScale = rb.gravityScale;
         }
+
+        if (speedEffect == null)
+        {
+            Transform found = transform.Find("SpeedEffect");
+            if (found != null) speedEffect = found.GetComponent<ParticleSystem>();
+        }
+
+        SetupGrindSparks();
+    }
+
+    private void SetupGrindSparks()
+    {
+        if (grindSparksEffect != null) return;
+        Transform found = transform.Find("GrindSparks");
+        if (found == null) found = transform.Find("GrindEffect");
+        if (found != null) grindSparksEffect = found.GetComponent<ParticleSystem>();
     }
 
     /// <summary>
@@ -77,12 +97,69 @@ public class PlayerMovement : MonoBehaviour
         }
 
         UpdateRampBoostTimer();
+        UpdateSpeedEffect();
+        UpdateGrindSparksEffect();
         if (animator != null)
         {
             animator.SetFloat("Horizontal", Mathf.Abs(horizontalMovement));
             animator.SetFloat("VerticalVelocity", rb.linearVelocity.y);
             animator.SetBool("IsGrounded", isGrounded);
             animator.SetBool("IsGrinding", isGrinding);
+        }
+    }
+
+    /// <summary>
+    /// Enables golden spark particle emission at the skates while grinding on rails.
+    /// </summary>
+    private void UpdateGrindSparksEffect()
+    {
+        if (grindSparksEffect == null) return;
+
+        var emission = grindSparksEffect.emission;
+        if (isGrinding)
+        {
+            if (!emission.enabled)
+            {
+                emission.enabled = true;
+                if (!grindSparksEffect.isPlaying) grindSparksEffect.Play();
+            }
+        }
+        else
+        {
+            if (emission.enabled)
+            {
+                emission.enabled = false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Controls emission of the user's SpeedEffect particle system based on skater movement and velocity.
+    /// </summary>
+    private void UpdateSpeedEffect()
+    {
+        if (speedEffect == null || rb == null) return;
+
+        float currentSpeed = rb.linearVelocity.magnitude;
+        bool isMovingFast = (isGrounded && Mathf.Abs(horizontalMovement) > 0.1f) || isGrinding || currentSpeed >= 4f;
+        var emission = speedEffect.emission;
+
+        if (isMovingFast && currentSpeed > 0.5f)
+        {
+            if (!emission.enabled)
+            {
+                emission.enabled = true;
+                if (!speedEffect.isPlaying) speedEffect.Play();
+            }
+            float t = Mathf.Clamp01((currentSpeed - 3f) / 10f);
+            emission.rateOverTime = Mathf.Lerp(15f, 50f, t);
+        }
+        else
+        {
+            if (emission.enabled)
+            {
+                emission.enabled = false;
+            }
         }
     }
 
