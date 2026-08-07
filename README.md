@@ -2,7 +2,6 @@
 
 Retro-style rollerblading game inspired by classic flash stickman animations.
 
----
 
 ## Technical Stack & Overview
 
