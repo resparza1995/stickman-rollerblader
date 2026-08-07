@@ -125,7 +125,8 @@ namespace UISystem
 
         private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
         {
-            RestartCountdown();
+            IsCountingDown = true;
+            HasFinished = false;
         }
 
         private void OnDestroy()
@@ -139,13 +140,14 @@ namespace UISystem
         private void Start()
         {
             EnsureUIReferences();
-            StartCoroutine(RunCountdownRoutine());
+            IsCountingDown = true;
+            HasFinished = false;
         }
 
         /// <summary>
-        /// Restarts the countdown routine on scene reload.
+        /// Starts the 3.. 2.. 1.. GO! countdown sequence when the player clicks Ready.
         /// </summary>
-        public void RestartCountdown()
+        public void StartCountdown()
         {
             StopAllCoroutines();
             EnsureUIReferences();
@@ -204,10 +206,9 @@ namespace UISystem
                 overlayImage.material = irisMaterial;
                 overlayImage.color = Color.white;
             }
-            else
+            if (overlayImage != null)
             {
-                overlayImage.material = null;
-                overlayImage.color = overlayColor;
+                overlayImage.gameObject.SetActive(false);
             }
 
             // Setup Text Component

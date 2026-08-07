@@ -51,8 +51,9 @@ namespace UISystem
         private Coroutine matchTimerCoroutine;
         private bool isMuted = false;
 
-        // End Game Summary Panel
+        // End Game & Initial Panels
         private GameObject summaryPanelObj;
+        private GameObject initialMenuPanelObj;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoInitialize()
@@ -99,7 +100,7 @@ namespace UISystem
         }
 
         /// <summary>
-        /// Resets the UI state, destroys summary panel, and hides HUD containers until countdown finished.
+        /// Resets the UI state, destroys panels, and shows initial instructions menu.
         /// </summary>
         public void ResetUI()
         {
@@ -112,6 +113,12 @@ namespace UISystem
                 summaryPanelObj = null;
             }
 
+            if (initialMenuPanelObj != null)
+            {
+                Destroy(initialMenuPanelObj);
+                initialMenuPanelObj = null;
+            }
+
             if (scoreHUDContainer != null) scoreHUDContainer.SetActive(false);
             if (timerHUDContainer != null) timerHUDContainer.SetActive(false);
             if (muteHUDContainer != null) muteHUDContainer.SetActive(false);
@@ -120,6 +127,7 @@ namespace UISystem
 
             EnsureEventSystem();
             UpdateTotalScoreDisplay(0);
+            ShowInitialMenu();
         }
 
         private void OnDestroy()
@@ -149,17 +157,11 @@ namespace UISystem
             }
 
             // Initially hide Score, Timer, and Mute HUD until countdown finishes
-            if (CountdownManager.Instance != null && CountdownManager.Instance.IsCountingDown)
-            {
-                if (scoreHUDContainer != null) scoreHUDContainer.SetActive(false);
-                if (timerHUDContainer != null) timerHUDContainer.SetActive(false);
-                if (muteHUDContainer != null) muteHUDContainer.SetActive(false);
-            }
-            else
-            {
-                // Countdown already done or not present
-                HandleCountdownFinished();
-            }
+            if (scoreHUDContainer != null) scoreHUDContainer.SetActive(false);
+            if (timerHUDContainer != null) timerHUDContainer.SetActive(false);
+            if (muteHUDContainer != null) muteHUDContainer.SetActive(false);
+
+            ShowInitialMenu();
         }
 
         /// <summary>
@@ -248,7 +250,7 @@ namespace UISystem
                 canvasObj = new GameObject("ScoreCanvas");
                 mainCanvas = canvasObj.AddComponent<Canvas>();
                 mainCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                mainCanvas.sortingOrder = 90;
+                mainCanvas.sortingOrder = 120;
                 canvasObj.AddComponent<CanvasScaler>();
                 canvasObj.AddComponent<GraphicRaycaster>();
             }
@@ -775,6 +777,178 @@ namespace UISystem
             btnTMP.color = new Color(0.12f, 0.09f, 0.07f); // Deep Sepia Charcoal text (#1F1712)
             btnTMP.raycastTarget = false;
             btnTMP.text = "Retry!";
+            if (customFont != null) btnTMP.font = customFont;
+        }
+
+        /// <summary>
+        /// Displays pre-match instruction panel with game rules, controls list, and Ready button.
+        /// </summary>
+        public void ShowInitialMenu()
+        {
+            EnsureEventSystem();
+
+            if (initialMenuPanelObj != null)
+            {
+                initialMenuPanelObj.SetActive(true);
+                return;
+            }
+
+            initialMenuPanelObj = new GameObject("InitialMenuPanel");
+            initialMenuPanelObj.transform.SetParent(mainCanvas.transform, false);
+
+            RectTransform panelRect = initialMenuPanelObj.AddComponent<RectTransform>();
+            panelRect.anchorMin = Vector2.zero;
+            panelRect.anchorMax = Vector2.one;
+            panelRect.offsetMin = Vector2.zero;
+            panelRect.offsetMax = Vector2.zero;
+
+            // Translucent sepia overlay
+            Image panelBG = initialMenuPanelObj.AddComponent<Image>();
+            panelBG.color = new Color(0.06f, 0.05f, 0.04f, 0.78f);
+            panelBG.raycastTarget = true;
+
+            // Outer Gold Border Frame
+            GameObject borderObj = new GameObject("InitialCardBorder");
+            borderObj.transform.SetParent(initialMenuPanelObj.transform, false);
+            RectTransform borderRect = borderObj.AddComponent<RectTransform>();
+            borderRect.anchorMin = new Vector2(0.5f, 0.5f);
+            borderRect.anchorMax = new Vector2(0.5f, 0.5f);
+            borderRect.pivot = new Vector2(0.5f, 0.5f);
+            borderRect.anchoredPosition = Vector2.zero;
+            borderRect.sizeDelta = new Vector2(520, 570);
+
+            Image borderImg = borderObj.AddComponent<Image>();
+            borderImg.sprite = CreateRoundedSprite(520, 570, 24);
+            borderImg.color = new Color(0.85f, 0.68f, 0.42f, 0.98f); // Bright Antique Gold
+
+            // Main Card Container
+            GameObject cardObj = new GameObject("InitialCard");
+            cardObj.transform.SetParent(borderObj.transform, false);
+            RectTransform cardRect = cardObj.AddComponent<RectTransform>();
+            cardRect.anchorMin = Vector2.zero;
+            cardRect.anchorMax = Vector2.one;
+            cardRect.offsetMin = new Vector2(3, 3);
+            cardRect.offsetMax = new Vector2(-3, -3);
+
+            Image cardBG = cardObj.AddComponent<Image>();
+            cardBG.sprite = CreateRoundedSprite(514, 564, 22);
+            cardBG.color = new Color(0.12f, 0.10f, 0.08f, 0.98f); // Rich Warm Dark Sepia
+
+            // Header Banner "HOW TO PLAY"
+            GameObject titleBoxObj = new GameObject("TitleHeaderBox");
+            titleBoxObj.transform.SetParent(cardObj.transform, false);
+            RectTransform tbRect = titleBoxObj.AddComponent<RectTransform>();
+            tbRect.anchorMin = new Vector2(0.08f, 0.88f);
+            tbRect.anchorMax = new Vector2(0.92f, 0.97f);
+            tbRect.offsetMin = Vector2.zero;
+            tbRect.offsetMax = Vector2.zero;
+
+            Image tbImg = titleBoxObj.AddComponent<Image>();
+            tbImg.sprite = CreateRoundedSprite(430, 48, 14);
+            tbImg.color = new Color(0.48f, 0.35f, 0.20f, 0.95f); // Rich Warm Brown Banner
+
+            GameObject titleObj = new GameObject("TitleText");
+            titleObj.transform.SetParent(titleBoxObj.transform, false);
+            RectTransform titleRect = titleObj.AddComponent<RectTransform>();
+            titleRect.anchorMin = Vector2.zero;
+            titleRect.anchorMax = Vector2.one;
+            titleRect.offsetMin = Vector2.zero;
+            titleRect.offsetMax = Vector2.zero;
+
+            TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
+            titleTMP.alignment = TextAlignmentOptions.Center;
+            titleTMP.fontSize = 25;
+            titleTMP.fontStyle = FontStyles.Bold | FontStyles.Italic;
+            titleTMP.color = new Color(0.98f, 0.92f, 0.72f); // Bright Parchment Gold
+            titleTMP.text = "HOW TO PLAY";
+            titleTMP.outlineWidth = 0.25f;
+            titleTMP.outlineColor = new Color(0.10f, 0.07f, 0.04f, 0.9f);
+            if (customFont != null) titleTMP.font = customFont;
+
+            // Structured Content Text (Objective & Categorized Controls)
+            GameObject infoObj = new GameObject("InfoText");
+            infoObj.transform.SetParent(cardObj.transform, false);
+            RectTransform infoRect = infoObj.AddComponent<RectTransform>();
+            infoRect.anchorMin = new Vector2(0.06f, 0.16f);
+            infoRect.anchorMax = new Vector2(0.94f, 0.86f);
+            infoRect.offsetMin = Vector2.zero;
+            infoRect.offsetMax = Vector2.zero;
+
+            TextMeshProUGUI infoTMP = infoObj.AddComponent<TextMeshProUGUI>();
+            infoTMP.alignment = TextAlignmentOptions.Top;
+            infoTMP.fontSize = 15;
+            infoTMP.fontStyle = FontStyles.Normal;
+            infoTMP.color = new Color(0.94f, 0.90f, 0.84f);
+            infoTMP.lineSpacing = 4f;
+
+            infoTMP.text = "<color=#FFC000><b>GOAL:</b></color> Score maximum points in <b>30 SECONDS</b>!\n\n" +
+                           "<color=#FFC000><b>MOVEMENT & LAUNCH:</b></color>\n" +
+                           "• <b>Move Left / Right:</b>  <color=#FFFFFF>[ A ] / [ D ]</color>  or  <color=#FFFFFF>[ ← ] / [ → ]</color>\n" +
+                           "• <b>Jump / Ramp Launch:</b>  <color=#FFFFFF>[ Spacebar ]</color>\n\n" +
+                           "<color=#FFC000><b>RAIL GRINDS (On Rail):</b></color>\n" +
+                           "• <b>Royal Grind:</b>  <color=#FFFFFF>[ 1 ]</color>  <color=#70FF70>(200 pts)</color>\n" +
+                           "• <b>Savannah Grind:</b>  <color=#FFFFFF>[ 2 ]</color>  <color=#70FF70>(250 pts)</color>\n" +
+                           "• <b>Soul Grind:</b>  <color=#FFFFFF>[ 3 ]</color>  <color=#70FF70>(300 pts)</color>\n\n" +
+                           "<color=#FFC000><b>AIR TRICKS (In Air):</b></color>\n" +
+                           "• <b>Backflip:</b>  <color=#FFFFFF>[ ↑ Arrow ]</color>  <color=#70FF70>(450 pts)</color>\n" +
+                           "• <b>Frontflip:</b>  <color=#FFFFFF>[ ↓ Arrow ]</color>  <color=#70FF70>(450 pts)</color>\n" +
+                           "• <b>360 Spin:</b>  <color=#FFFFFF>[ ← ] / [ → ]</color>  <color=#70FF70>(300 pts)</color>";
+            if (customFont != null) infoTMP.font = customFont;
+
+            // Vibrant Ready Button
+            GameObject btnObj = new GameObject("ReadyButton");
+            btnObj.transform.SetParent(cardObj.transform, false);
+            RectTransform btnRect = btnObj.AddComponent<RectTransform>();
+            btnRect.anchorMin = new Vector2(0.5f, 0.07f);
+            btnRect.anchorMax = new Vector2(0.5f, 0.07f);
+            btnRect.pivot = new Vector2(0.5f, 0.5f);
+            btnRect.anchoredPosition = Vector2.zero;
+            btnRect.sizeDelta = new Vector2(240, 52);
+
+            Image btnImg = btnObj.AddComponent<Image>();
+            btnImg.sprite = CreateRoundedSprite(240, 52, 16);
+            btnImg.color = new Color(0.85f, 0.65f, 0.35f); // Bright Gold/Orange (#DDA53A)
+            btnImg.raycastTarget = true;
+
+            Outline btnOutline = btnObj.AddComponent<Outline>();
+            btnOutline.effectColor = new Color(0.12f, 0.09f, 0.07f, 1f);
+            btnOutline.effectDistance = new Vector2(1.5f, -1.5f);
+
+            Button readyBtn = btnObj.AddComponent<Button>();
+            ColorBlock colors = readyBtn.colors;
+            colors.normalColor = new Color(0.85f, 0.65f, 0.35f);
+            colors.highlightedColor = new Color(0.95f, 0.75f, 0.45f);
+            colors.pressedColor = new Color(0.70f, 0.50f, 0.25f);
+            readyBtn.colors = colors;
+
+            readyBtn.onClick.AddListener(() =>
+            {
+                if (initialMenuPanelObj != null)
+                {
+                    Destroy(initialMenuPanelObj);
+                    initialMenuPanelObj = null;
+                }
+                if (CountdownManager.Instance != null)
+                {
+                    CountdownManager.Instance.StartCountdown();
+                }
+            });
+
+            GameObject btnTextObj = new GameObject("ReadyText");
+            btnTextObj.transform.SetParent(btnObj.transform, false);
+            RectTransform btnTextRect = btnTextObj.AddComponent<RectTransform>();
+            btnTextRect.anchorMin = Vector2.zero;
+            btnTextRect.anchorMax = Vector2.one;
+            btnTextRect.offsetMin = Vector2.zero;
+            btnTextRect.offsetMax = Vector2.zero;
+
+            TextMeshProUGUI btnTMP = btnTextObj.AddComponent<TextMeshProUGUI>();
+            btnTMP.alignment = TextAlignmentOptions.Center;
+            btnTMP.fontSize = 24;
+            btnTMP.fontStyle = FontStyles.Bold | FontStyles.Italic;
+            btnTMP.color = new Color(0.10f, 0.07f, 0.04f); // High-contrast Deep Sepia Charcoal
+            btnTMP.raycastTarget = false;
+            btnTMP.text = "READY!";
             if (customFont != null) btnTMP.font = customFont;
         }
     }

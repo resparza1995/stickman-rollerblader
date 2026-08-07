@@ -42,6 +42,13 @@ public class PlayerMovement : MonoBehaviour
     public float slopeRotationSpeed = 25f;
     public float spinDuration = 0.5f;
 
+    [Header("Map Bounds Settings")]
+    public bool useMapBounds = true;
+    public SpriteRenderer backgroundBounds;
+    public float minX = -10f;
+    public float maxX = 120f;
+    public float paddingX = 0.5f;
+
     [Header("Visual Effects")]
     public ParticleSystem speedEffect;
     #endregion
@@ -94,6 +101,31 @@ public class PlayerMovement : MonoBehaviour
         }
 
         SetupGrindSparks();
+        CalculateMapBounds();
+    }
+
+    public void CalculateMapBounds()
+    {
+        if (backgroundBounds == null)
+        {
+            CameraFollow camFollow = FindAnyObjectByType<CameraFollow>();
+            if (camFollow != null && camFollow.backgroundBounds != null)
+            {
+                backgroundBounds = camFollow.backgroundBounds;
+            }
+            else
+            {
+                GameObject bgObj = GameObject.Find("Background");
+                if (bgObj != null) backgroundBounds = bgObj.GetComponent<SpriteRenderer>();
+            }
+        }
+
+        if (backgroundBounds != null)
+        {
+            minX = backgroundBounds.bounds.min.x + paddingX;
+            maxX = backgroundBounds.bounds.max.x - paddingX;
+            useMapBounds = true;
+        }
     }
 
     private void SetupGrindSparks()
@@ -157,6 +189,27 @@ public class PlayerMovement : MonoBehaviour
     private void LateUpdate()
     {
         UpdateSlopeRotation();
+        ClampPositionToBounds();
+    }
+
+    private void ClampPositionToBounds()
+    {
+        if (!useMapBounds) return;
+
+        Vector3 pos = transform.position;
+        float clampedX = Mathf.Clamp(pos.x, minX, maxX);
+
+        if (Mathf.Abs(pos.x - clampedX) > 0.001f)
+        {
+            transform.position = new Vector3(clampedX, pos.y, pos.z);
+            if (rb != null)
+            {
+                if ((pos.x <= minX && rb.linearVelocity.x < 0) || (pos.x >= maxX && rb.linearVelocity.x > 0))
+                {
+                    rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+                }
+            }
+        }
     }
 
     private void FixedUpdate()
@@ -298,26 +351,25 @@ public class PlayerMovement : MonoBehaviour
 
         string controlName = context.control != null ? context.control.name : "";
 
-        if (isGrinding)
+        if (controlName.Equals("1", System.StringComparison.OrdinalIgnoreCase)
+         || controlName.Equals("digit1", System.StringComparison.OrdinalIgnoreCase)
+         || controlName.Equals("numpad1", System.StringComparison.OrdinalIgnoreCase))
         {
-            if (controlName.Equals("1", System.StringComparison.OrdinalIgnoreCase)
-             || controlName.Equals("digit1", System.StringComparison.OrdinalIgnoreCase)
-             || controlName.Equals("numpad1", System.StringComparison.OrdinalIgnoreCase))
-            {
-                SetGrindStance(1, "Royal");
-            }
-            else if (controlName.Equals("2", System.StringComparison.OrdinalIgnoreCase)
-                  || controlName.Equals("digit2", System.StringComparison.OrdinalIgnoreCase)
-                  || controlName.Equals("numpad2", System.StringComparison.OrdinalIgnoreCase))
-            {
-                SetGrindStance(2, "Savannah");
-            }
-            else if (controlName.Equals("3", System.StringComparison.OrdinalIgnoreCase)
-                  || controlName.Equals("digit3", System.StringComparison.OrdinalIgnoreCase)
-                  || controlName.Equals("numpad3", System.StringComparison.OrdinalIgnoreCase))
-            {
-                SetGrindStance(3, "Soul");
-            }
+            SetGrindStance(1, "Royal");
+            return;
+        }
+        else if (controlName.Equals("2", System.StringComparison.OrdinalIgnoreCase)
+              || controlName.Equals("digit2", System.StringComparison.OrdinalIgnoreCase)
+              || controlName.Equals("numpad2", System.StringComparison.OrdinalIgnoreCase))
+        {
+            SetGrindStance(2, "Savannah");
+            return;
+        }
+        else if (controlName.Equals("3", System.StringComparison.OrdinalIgnoreCase)
+              || controlName.Equals("digit3", System.StringComparison.OrdinalIgnoreCase)
+              || controlName.Equals("numpad3", System.StringComparison.OrdinalIgnoreCase))
+        {
+            SetGrindStance(3, "Soul");
             return;
         }
 
@@ -405,12 +457,12 @@ public class PlayerMovement : MonoBehaviour
 
     private void SetGrindStance(int type, string trickName)
     {
+        currentGrindType = type;
+
         if (!isGrinding) return;
-        if (currentGrindType == type) return;
         if (grindStanceSwitchCooldownTimer > 0f) return;
 
         grindStanceSwitchCooldownTimer = 0.2f;
-        currentGrindType = type;
 
         if (animator != null)
         {
