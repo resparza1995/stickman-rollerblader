@@ -26,7 +26,27 @@ public class VintageFilter : MonoBehaviour
 
     private Material material;
 
+    private static readonly int SepiaAmountID = Shader.PropertyToID("_SepiaAmount");
+    private static readonly int DesaturationID = Shader.PropertyToID("_Desaturation");
+    private static readonly int VignetteIntensityID = Shader.PropertyToID("_VignetteIntensity");
+    private static readonly int VignetteSmoothnessID = Shader.PropertyToID("_VignetteSmoothness");
+    private static readonly int GrainIntensityID = Shader.PropertyToID("_GrainIntensity");
+
     private void OnEnable()
+    {
+        InitializeMaterial();
+    }
+
+    private void OnDisable()
+    {
+        if (material != null)
+        {
+            DestroyImmediate(material);
+            material = null;
+        }
+    }
+
+    private void InitializeMaterial()
     {
         if (vintageShader == null)
         {
@@ -35,39 +55,27 @@ public class VintageFilter : MonoBehaviour
 
         if (vintageShader != null && material == null)
         {
-            material = new Material(vintageShader);
-            material.hideFlags = HideFlags.HideAndDontSave;
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (material != null)
-        {
-            DestroyImmediate(material);
+            material = new Material(vintageShader)
+            {
+                hideFlags = HideFlags.HideAndDontSave
+            };
         }
     }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        if (vintageShader == null)
+        if (material == null)
         {
-            vintageShader = Shader.Find("Hidden/VintageEffect");
-        }
-
-        if (material == null && vintageShader != null)
-        {
-            material = new Material(vintageShader);
-            material.hideFlags = HideFlags.HideAndDontSave;
+            InitializeMaterial();
         }
 
         if (material != null)
         {
-            material.SetFloat("_SepiaAmount", sepiaAmount);
-            material.SetFloat("_Desaturation", desaturation);
-            material.SetFloat("_VignetteIntensity", vignetteIntensity);
-            material.SetFloat("_VignetteSmoothness", vignetteSmoothness);
-            material.SetFloat("_GrainIntensity", grainIntensity);
+            material.SetFloat(SepiaAmountID, sepiaAmount);
+            material.SetFloat(DesaturationID, desaturation);
+            material.SetFloat(VignetteIntensityID, vignetteIntensity);
+            material.SetFloat(VignetteSmoothnessID, vignetteSmoothness);
+            material.SetFloat(GrainIntensityID, grainIntensity);
 
             Graphics.Blit(source, destination, material);
         }

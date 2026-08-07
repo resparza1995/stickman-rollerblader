@@ -447,6 +447,11 @@ namespace UISystem
             }
         }
 
+        // Cache references
+        private PlayerMovement cachedPlayer;
+        private Camera cachedMainCam;
+        private static readonly Dictionary<string, Sprite> spriteCache = new Dictionary<string, Sprite>();
+
         /// <summary>
         /// Animates the pop-in emergence from bottom to top behind the skater, then floating away in opposite movement direction.
         /// </summary>
@@ -455,17 +460,24 @@ namespace UISystem
             trickCardRect.gameObject.SetActive(true);
             if (cardCanvasGroup == null) cardCanvasGroup = trickCardRect.GetComponent<CanvasGroup>();
 
-            PlayerMovement player = FindAnyObjectByType<PlayerMovement>();
-            Camera mainCam = Camera.main;
+            if (cachedPlayer == null)
+            {
+                cachedPlayer = FindAnyObjectByType<PlayerMovement>();
+            }
+
+            if (cachedMainCam == null || !cachedMainCam.isActiveAndEnabled)
+            {
+                cachedMainCam = Camera.main;
+            }
 
             Vector2 startScreenPos;
             float moveDir = 1f;
 
-            if (player != null && mainCam != null)
+            if (cachedPlayer != null && cachedMainCam != null)
             {
-                Vector3 playerWorldPos = player.transform.position;
-                startScreenPos = mainCam.WorldToScreenPoint(playerWorldPos);
-                moveDir = (player.horizontalMovement != 0f) ? player.horizontalMovement : (player.transform.localScale.x > 0 ? 1f : -1f);
+                Vector3 playerWorldPos = cachedPlayer.transform.position;
+                startScreenPos = cachedMainCam.WorldToScreenPoint(playerWorldPos);
+                moveDir = (cachedPlayer.horizontalMovement != 0f) ? cachedPlayer.horizontalMovement : (cachedPlayer.transform.localScale.x > 0 ? 1f : -1f);
             }
             else
             {
@@ -532,10 +544,16 @@ namespace UISystem
         }
 
         /// <summary>
-        /// Generates a procedural rounded rectangle sprite at runtime for smooth rounded UI cards, banners, and buttons.
+        /// Generates a procedural rounded rectangle sprite at runtime with caching to prevent texture memory leaks.
         /// </summary>
         private Sprite CreateRoundedSprite(int width, int height, int radius)
         {
+            string key = $"{width}_{height}_{radius}";
+            if (spriteCache.TryGetValue(key, out Sprite cachedSprite) && cachedSprite != null)
+            {
+                return cachedSprite;
+            }
+
             Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
             Color[] colors = new Color[width * height];
 
@@ -571,7 +589,9 @@ namespace UISystem
 
             tex.SetPixels(colors);
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
+            Sprite sprite = Sprite.Create(tex, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
+            spriteCache[key] = sprite;
+            return sprite;
         }
 
         /// <summary>

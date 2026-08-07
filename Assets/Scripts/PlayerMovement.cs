@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,31 +8,51 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class PlayerMovement : MonoBehaviour
 {
-    private Rigidbody2D rb;
+    #region Cached Animator Hashes
+    private static readonly int AnimHorizontal = Animator.StringToHash("Horizontal");
+    private static readonly int AnimVerticalVelocity = Animator.StringToHash("VerticalVelocity");
+    private static readonly int AnimIsGrounded = Animator.StringToHash("IsGrounded");
+    private static readonly int AnimIsGrinding = Animator.StringToHash("IsGrinding");
+    private static readonly int AnimJump = Animator.StringToHash("Jump");
+    private static readonly int AnimAirRotate = Animator.StringToHash("AirRotate");
+    private static readonly int AnimRoyal = Animator.StringToHash("Royal");
+    private static readonly int AnimSavannah = Animator.StringToHash("Savannah");
+    private static readonly int AnimSoul = Animator.StringToHash("Soul");
+    #endregion
 
+    #region Inspector Fields
+    [Header("Movement & Physics")]
     public float moveSpeed = 5f;
-
-    public float horizontalMovement;
-
     public float jumpForce = 5f;
     public float rampJumpForce = 12f;
     public float fallMultiplier = 2.5f;
 
+    [Header("Ground Detection")]
     public Transform groundCheck;
     public float groundCheckRadius = 0.25f;
     public LayerMask groundLayer;
     public bool isGrounded;
-
-    private Animator animator;
-    private TricksSystem.TrickController trickController;
 
     [Header("Grind Settings")]
     public bool isGrinding;
     public int currentGrindType = 1; // 1: Royal, 2: Savannah, 3: Soul
     public ParticleSystem grindSparksEffect;
 
-    [Header("Slope Settings")]
+    [Header("Slope & Rotation Settings")]
     public float slopeRotationSpeed = 25f;
+    public float spinDuration = 0.5f;
+
+    [Header("Visual Effects")]
+    public ParticleSystem speedEffect;
+    #endregion
+
+    #region State & References
+    public float horizontalMovement;
+    private Rigidbody2D rb;
+    private Animator animator;
+    private TricksSystem.TrickController trickController;
+    private PlayerSystem.PlayerAudio playerAudio;
+
     private Vector2 slopeNormal;
     private bool isOnSlope;
     private bool isHalfpipe;
@@ -42,19 +64,24 @@ public class PlayerMovement : MonoBehaviour
     private float initialGravityScale;
     private float jumpCooldownTimer;
     private float grindStanceSwitchCooldownTimer;
-    [Header("Air Rotation Settings")]
-    public float spinDuration = 0.5f;
     private bool isSpinning;
     private Coroutine spinCoroutine;
+    private readonly List<ContactPoint2D> contactsList = new List<ContactPoint2D>();
+    #endregion
 
-    [Header("Speed Visual Effects")]
-    public ParticleSystem speedEffect;
-    
-    void Start()
+    #region Unity Lifecycle
+    private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         trickController = GetComponent<TricksSystem.TrickController>();
+        playerAudio = GetComponent<PlayerSystem.PlayerAudio>();
+
+        if (playerAudio == null)
+        {
+            playerAudio = gameObject.AddComponent<PlayerSystem.PlayerAudio>();
+        }
+
         if (rb != null)
         {
             initialGravityScale = rb.gravityScale;
@@ -67,10 +94,6 @@ public class PlayerMovement : MonoBehaviour
         }
 
         SetupGrindSparks();
-        if (GetComponent<PlayerSystem.PlayerAudio>() == null)
-        {
-            gameObject.AddComponent<PlayerSystem.PlayerAudio>();
-        }
     }
 
     private void SetupGrindSparks()
@@ -81,25 +104,19 @@ public class PlayerMovement : MonoBehaviour
         if (found != null) grindSparksEffect = found.GetComponent<ParticleSystem>();
     }
 
-    /// <summary>
-    /// Checks if player movement and actions are currently locked by the CountdownManager.
-    /// </summary>
     public bool IsMovementLocked()
     {
         return UISystem.CountdownManager.Instance != null && UISystem.CountdownManager.Instance.IsCountingDown;
     }
 
-    /// <summary>
-    /// Per-frame update for input checks, cooldown timers, and animator parameter synchronization.
-    /// </summary>
-    void Update()
+    private void Update()
     {
         if (IsMovementLocked())
         {
             horizontalMovement = 0f;
             if (animator != null)
             {
-                animator.SetFloat("Horizontal", 0f);
+                animator.SetFloat(AnimHorizontal, 0f);
             }
             return;
         }
@@ -127,119 +144,13 @@ public class PlayerMovement : MonoBehaviour
         UpdateRampBoostTimer();
         UpdateSpeedEffect();
         UpdateGrindSparksEffect();
-        if (animator != null)
-        {
-            animator.SetFloat("Horizontal", Mathf.Abs(horizontalMovement));
-            animator.SetFloat("VerticalVelocity", rb.linearVelocity.y);
-            animator.SetBool("IsGrounded", isGrounded);
-            animator.SetBool("IsGrinding", isGrinding);
-        }
-    }
-
-    /// <summary>
-    /// Enables golden spark particle emission at the skates while grinding on rails.
-    /// </summary>
-    private void UpdateGrindSparksEffect()
-    {
-        if (grindSparksEffect == null) return;
-
-        var emission = grindSparksEffect.emission;
-        if (isGrinding)
-        {
-            if (!emission.enabled)
-            {
-                emission.enabled = true;
-                if (!grindSparksEffect.isPlaying) grindSparksEffect.Play();
-            }
-        }
-        else
-        {
-            if (emission.enabled)
-            {
-                emission.enabled = false;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Controls emission of the user's SpeedEffect particle system based on skater movement and velocity.
-    /// </summary>
-    private void UpdateSpeedEffect()
-    {
-        if (speedEffect == null || rb == null) return;
-
-        float currentSpeed = rb.linearVelocity.magnitude;
-        bool isMovingFast = (isGrounded && Mathf.Abs(horizontalMovement) > 0.1f) || isGrinding || currentSpeed >= 4f;
-        var emission = speedEffect.emission;
-
-        if (isMovingFast && currentSpeed > 0.5f)
-        {
-            if (!emission.enabled)
-            {
-                emission.enabled = true;
-                if (!speedEffect.isPlaying) speedEffect.Play();
-            }
-            float t = Mathf.Clamp01((currentSpeed - 3f) / 10f);
-            emission.rateOverTime = Mathf.Lerp(15f, 50f, t);
-        }
-        else
-        {
-            if (emission.enabled)
-            {
-                emission.enabled = false;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Reads direct number key input (1, 2, 3 or Numpad 1, 2, 3) to switch grind stances.
-    /// </summary>
-    private void CheckGrindInput()
-    {
-        if (Keyboard.current == null || IsMovementLocked()) return;
-
-        if (Keyboard.current.digit1Key.wasPressedThisFrame || Keyboard.current.numpad1Key.wasPressedThisFrame)
-        {
-            SetGrindStance(1, "Royal");
-        }
-        else if (Keyboard.current.digit2Key.wasPressedThisFrame || Keyboard.current.numpad2Key.wasPressedThisFrame)
-        {
-            SetGrindStance(2, "Savannah");
-        }
-        else if (Keyboard.current.digit3Key.wasPressedThisFrame || Keyboard.current.numpad3Key.wasPressedThisFrame)
-        {
-            SetGrindStance(3, "Soul");
-        }
-    }
-
-    /// <summary>
-    /// Updates the active grind stance (1: Royal, 2: Savannah, 3: Soul) and triggers animator state and score execution when grinding.
-    /// </summary>
-    private void SetGrindStance(int type, string trickName)
-    {
-        if (!isGrinding) return;
-        if (currentGrindType == type) return;
-        if (grindStanceSwitchCooldownTimer > 0f) return;
-
-        grindStanceSwitchCooldownTimer = 0.2f;
-        currentGrindType = type;
 
         if (animator != null)
         {
-            animator.SetTrigger(trickName);
-            animator.Play(trickName);
-        }
-
-        bool executed = false;
-        if (trickController != null)
-        {
-            executed = trickController.TryExecuteTrick(trickName, TricksSystem.TrickType.Grind);
-        }
-
-        if (!executed && UISystem.ScoreManager.Instance != null)
-        {
-            int pts = type == 1 ? 200 : (type == 2 ? 250 : 300);
-            UISystem.ScoreManager.Instance.AddScore(trickName + " Grind", pts);
+            animator.SetFloat(AnimHorizontal, Mathf.Abs(horizontalMovement));
+            animator.SetFloat(AnimVerticalVelocity, rb.linearVelocity.y);
+            animator.SetBool(AnimIsGrounded, isGrounded);
+            animator.SetBool(AnimIsGrinding, isGrinding);
         }
     }
 
@@ -248,48 +159,7 @@ public class PlayerMovement : MonoBehaviour
         UpdateSlopeRotation();
     }
 
-    /// <summary>
-    /// Interpolates character rotation smoothly to match slope or rail normal inclination.
-    /// </summary>
-    private void UpdateSlopeRotation()
-    {
-        if (isSpinning) return;
-
-        if (isGrounded && (isOnSlope || isGrinding))
-        {
-            float targetAngle = Mathf.Atan2(-slopeNormal.x, slopeNormal.y) * Mathf.Rad2Deg;
-            Quaternion targetRotation = Quaternion.Euler(0f, 0f, targetAngle);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * slopeRotationSpeed);
-        }
-        else
-        {
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.identity, Time.deltaTime * slopeRotationSpeed);
-        }
-    }
-
-    private void UpdateRampBoostTimer()
-    {
-        if (rampBoostTimer > 0f)
-        {
-            rampBoostTimer -= Time.deltaTime;
-            if (rampBoostTimer <= 0f)
-            {
-                canRampBoost = false;
-            }
-        }
-    }
-
-    public void EnableRampBoost(Vector2 impulse, float duration)
-    {
-        canRampBoost = true;
-        currentRampBoostImpulse = impulse;
-        rampBoostTimer = duration;
-    }
-
-    /// <summary>
-    /// Executes physics velocity updates for normal movement, slope sliding, zero-gravity grinding, and dynamic fall gravity.
-    /// </summary>
-    void FixedUpdate()
+    private void FixedUpdate()
     {
         rb.angularVelocity = 0f;
 
@@ -343,107 +213,9 @@ public class PlayerMovement : MonoBehaviour
             rb.linearVelocity += Vector2.up * (Physics2D.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime);
         }
     }
+    #endregion
 
-    private System.Collections.Generic.List<ContactPoint2D> contactsList = new System.Collections.Generic.List<ContactPoint2D>();
-
-    public void UpdateGroundedState()
-    {
-        bool grounded = false;
-        bool slope = false;
-        bool halfpipe = false;
-        bool grinding = false;
-        Vector2 bestNormal = Vector2.up;
-
-        if (rb != null)
-        {
-            int count = rb.GetContacts(contactsList);
-            for (int i = 0; i < count; i++)
-            {
-                ContactPoint2D cp = contactsList[i];
-                Vector2 n = cp.normal;
-                if (n.y < 0) n = -n;
-
-                if (n.y > 0.05f)
-                {
-                    grounded = true;
-                    if (cp.collider != null)
-                    {
-                        if (cp.collider.CompareTag("Halfpipe"))
-                        {
-                            halfpipe = true;
-                        }
-                        if (cp.collider.CompareTag("Rail") || cp.collider.GetComponent<ObstaclesSystem.IRailObstacle>() != null)
-                        {
-                            grinding = true;
-                        }
-                    }
-
-                    if (Mathf.Abs(n.x) > 0.01f)
-                    {
-                        slope = true;
-                        bestNormal = n;
-                        break;
-                    }
-                    else
-                    {
-                        bestNormal = n;
-                    }
-                }
-            }
-        }
-
-        if (!grounded && groundCheck != null)
-        {
-            Collider2D hit = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-            if (hit != null)
-            {
-                grounded = true;
-                if (hit.CompareTag("Halfpipe"))
-                {
-                    halfpipe = true;
-                }
-                if (hit.CompareTag("Rail") || hit.GetComponent<ObstaclesSystem.IRailObstacle>() != null)
-                {
-                    grinding = true;
-                }
-            }
-        }
-
-        if (!isGrinding && grinding)
-        {
-            string trickName = currentGrindType == 2 ? "Savannah" : (currentGrindType == 3 ? "Soul" : "Royal");
-            if (animator != null)
-            {
-                animator.SetTrigger(trickName);
-                animator.Play(trickName);
-            }
-            if (trickController == null)
-            {
-                trickController = GetComponent<TricksSystem.TrickController>();
-            }
-            if (trickController != null)
-            {
-                trickController.TryExecuteTrick(trickName, TricksSystem.TrickType.Grind);
-            }
-        }
-
-        isGrounded = grounded;
-        isOnSlope = slope;
-        isHalfpipe = halfpipe;
-        isGrinding = grinding;
-        slopeNormal = bestNormal;
-
-        if (isGrounded)
-        {
-            isVerticalAir = false;
-        }
-    }
-
-    private void CheckSlope()
-    {
-        // Unified into UpdateGroundedState using rb.GetContacts
-    }
-
+    #region Input Callbacks
     public void Move(InputAction.CallbackContext context) 
     {
         if (IsMovementLocked())
@@ -467,8 +239,8 @@ public class PlayerMovement : MonoBehaviour
             isGrinding = false;
             if (animator != null)
             {
-                animator.SetTrigger("Jump");
-                animator.Play("Jump");
+                animator.SetTrigger(AnimJump);
+                animator.Play(AnimJump);
             }
 
             float facingDirection = transform.localScale.x > 0 ? 1f : -1f;
@@ -486,14 +258,17 @@ public class PlayerMovement : MonoBehaviour
         isGrounded = false;
         isOnSlope = false;
         isGrinding = false;
+
         if (animator != null)
         {
-            animator.SetTrigger("Jump");
-            animator.Play("Jump");
+            animator.SetTrigger(AnimJump);
+            animator.Play(AnimJump);
         }
 
-        PlayerSystem.PlayerAudio audio = GetComponent<PlayerSystem.PlayerAudio>();
-        if (audio != null) audio.PlayJumpSound();
+        if (playerAudio != null)
+        {
+            playerAudio.PlayJumpSound();
+        }
 
         if (wasSlope && wasHalfpipe)
         {
@@ -562,7 +337,10 @@ public class PlayerMovement : MonoBehaviour
                 trickController = GetComponent<TricksSystem.TrickController>();
             }
 
-            animator.SetTrigger("AirRotate");
+            if (animator != null)
+            {
+                animator.SetTrigger(AnimAirRotate);
+            }
 
             string airTrickName = "360";
             int basePoints = 300;
@@ -604,8 +382,57 @@ public class PlayerMovement : MonoBehaviour
             }
         }
     }
+    #endregion
 
-    private System.Collections.IEnumerator PerformZFlip(float direction)
+    #region Grinding & Tricks Logic
+    private void CheckGrindInput()
+    {
+        if (Keyboard.current == null || IsMovementLocked()) return;
+
+        if (Keyboard.current.digit1Key.wasPressedThisFrame || Keyboard.current.numpad1Key.wasPressedThisFrame)
+        {
+            SetGrindStance(1, "Royal");
+        }
+        else if (Keyboard.current.digit2Key.wasPressedThisFrame || Keyboard.current.numpad2Key.wasPressedThisFrame)
+        {
+            SetGrindStance(2, "Savannah");
+        }
+        else if (Keyboard.current.digit3Key.wasPressedThisFrame || Keyboard.current.numpad3Key.wasPressedThisFrame)
+        {
+            SetGrindStance(3, "Soul");
+        }
+    }
+
+    private void SetGrindStance(int type, string trickName)
+    {
+        if (!isGrinding) return;
+        if (currentGrindType == type) return;
+        if (grindStanceSwitchCooldownTimer > 0f) return;
+
+        grindStanceSwitchCooldownTimer = 0.2f;
+        currentGrindType = type;
+
+        if (animator != null)
+        {
+            int animHash = type == 1 ? AnimRoyal : (type == 2 ? AnimSavannah : AnimSoul);
+            animator.SetTrigger(animHash);
+            animator.Play(animHash);
+        }
+
+        bool executed = false;
+        if (trickController != null)
+        {
+            executed = trickController.TryExecuteTrick(trickName, TricksSystem.TrickType.Grind);
+        }
+
+        if (!executed && UISystem.ScoreManager.Instance != null)
+        {
+            int pts = type == 1 ? 200 : (type == 2 ? 250 : 300);
+            UISystem.ScoreManager.Instance.AddScore(trickName + " Grind", pts);
+        }
+    }
+
+    private IEnumerator PerformZFlip(float direction)
     {
         isSpinning = true;
         float elapsed = 0f;
@@ -625,7 +452,7 @@ public class PlayerMovement : MonoBehaviour
         spinCoroutine = null;
     }
 
-    private System.Collections.IEnumerator PerformYSpin(float direction)
+    private IEnumerator PerformYSpin(float direction)
     {
         isSpinning = true;
         float elapsed = 0f;
@@ -643,16 +470,136 @@ public class PlayerMovement : MonoBehaviour
         isSpinning = false;
         spinCoroutine = null;
     }
+    #endregion
 
-    private void OnDrawGizmosSelected() 
+    #region Environment & Ground State
+    public void UpdateGroundedState()
     {
-        if (groundCheck != null)
+        bool grounded = false;
+        bool slope = false;
+        bool halfpipe = false;
+        bool grinding = false;
+        Vector2 bestNormal = Vector2.up;
+
+        if (rb != null)
         {
-            Gizmos.color = Color.cyan;
-            Gizmos.matrix = Matrix4x4.TRS(groundCheck.position, groundCheck.rotation, Vector3.one);
-            Gizmos.DrawWireSphere(Vector3.zero, groundCheckRadius);
-            Gizmos.matrix = Matrix4x4.identity;
+            int count = rb.GetContacts(contactsList);
+            for (int i = 0; i < count; i++)
+            {
+                ContactPoint2D cp = contactsList[i];
+                Vector2 n = cp.normal;
+                if (n.y < 0) n = -n;
+
+                if (n.y > 0.05f)
+                {
+                    grounded = true;
+                    if (cp.collider != null)
+                    {
+                        if (cp.collider.CompareTag("Halfpipe"))
+                        {
+                            halfpipe = true;
+                        }
+                        if (cp.collider.CompareTag("Rail") || cp.collider.GetComponent<ObstaclesSystem.IRailObstacle>() != null)
+                        {
+                            grinding = true;
+                        }
+                    }
+
+                    if (Mathf.Abs(n.x) > 0.01f)
+                    {
+                        slope = true;
+                        bestNormal = n;
+                        break;
+                    }
+                    else
+                    {
+                        bestNormal = n;
+                    }
+                }
+            }
         }
+
+        if (!grounded && groundCheck != null)
+        {
+            Collider2D hit = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+            if (hit != null)
+            {
+                grounded = true;
+                if (hit.CompareTag("Halfpipe"))
+                {
+                    halfpipe = true;
+                }
+                if (hit.CompareTag("Rail") || hit.GetComponent<ObstaclesSystem.IRailObstacle>() != null)
+                {
+                    grinding = true;
+                }
+            }
+        }
+
+        if (!isGrinding && grinding)
+        {
+            string trickName = currentGrindType == 2 ? "Savannah" : (currentGrindType == 3 ? "Soul" : "Royal");
+            if (animator != null)
+            {
+                int animHash = currentGrindType == 2 ? AnimSavannah : (currentGrindType == 3 ? AnimSoul : AnimRoyal);
+                animator.SetTrigger(animHash);
+                animator.Play(animHash);
+            }
+            if (trickController == null)
+            {
+                trickController = GetComponent<TricksSystem.TrickController>();
+            }
+            if (trickController != null)
+            {
+                trickController.TryExecuteTrick(trickName, TricksSystem.TrickType.Grind);
+            }
+        }
+
+        isGrounded = grounded;
+        isOnSlope = slope;
+        isHalfpipe = halfpipe;
+        isGrinding = grinding;
+        slopeNormal = bestNormal;
+
+        if (isGrounded)
+        {
+            isVerticalAir = false;
+        }
+    }
+
+    private void UpdateSlopeRotation()
+    {
+        if (isSpinning) return;
+
+        if (isGrounded && (isOnSlope || isGrinding))
+        {
+            float targetAngle = Mathf.Atan2(-slopeNormal.x, slopeNormal.y) * Mathf.Rad2Deg;
+            Quaternion targetRotation = Quaternion.Euler(0f, 0f, targetAngle);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * slopeRotationSpeed);
+        }
+        else
+        {
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.identity, Time.deltaTime * slopeRotationSpeed);
+        }
+    }
+
+    private void UpdateRampBoostTimer()
+    {
+        if (rampBoostTimer > 0f)
+        {
+            rampBoostTimer -= Time.deltaTime;
+            if (rampBoostTimer <= 0f)
+            {
+                canRampBoost = false;
+            }
+        }
+    }
+
+    public void EnableRampBoost(Vector2 impulse, float duration)
+    {
+        canRampBoost = true;
+        currentRampBoostImpulse = impulse;
+        rampBoostTimer = duration;
     }
 
     public void checkFlip() 
@@ -670,4 +617,69 @@ public class PlayerMovement : MonoBehaviour
             transform.localScale = scale;
         }
     }
+    #endregion
+
+    #region Visual Effects Updates
+    private void UpdateGrindSparksEffect()
+    {
+        if (grindSparksEffect == null) return;
+
+        var emission = grindSparksEffect.emission;
+        if (isGrinding)
+        {
+            if (!emission.enabled)
+            {
+                emission.enabled = true;
+                if (!grindSparksEffect.isPlaying) grindSparksEffect.Play();
+            }
+        }
+        else
+        {
+            if (emission.enabled)
+            {
+                emission.enabled = false;
+            }
+        }
+    }
+
+    private void UpdateSpeedEffect()
+    {
+        if (speedEffect == null || rb == null) return;
+
+        float currentSpeed = rb.linearVelocity.magnitude;
+        bool isMovingFast = (isGrounded && Mathf.Abs(horizontalMovement) > 0.1f) || isGrinding || currentSpeed >= 4f;
+        var emission = speedEffect.emission;
+
+        if (isMovingFast && currentSpeed > 0.5f)
+        {
+            if (!emission.enabled)
+            {
+                emission.enabled = true;
+                if (!speedEffect.isPlaying) speedEffect.Play();
+            }
+            float t = Mathf.Clamp01((currentSpeed - 3f) / 10f);
+            emission.rateOverTime = Mathf.Lerp(15f, 50f, t);
+        }
+        else
+        {
+            if (emission.enabled)
+            {
+                emission.enabled = false;
+            }
+        }
+    }
+    #endregion
+
+    #region Gizmos
+    private void OnDrawGizmosSelected() 
+    {
+        if (groundCheck != null)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.matrix = Matrix4x4.TRS(groundCheck.position, groundCheck.rotation, Vector3.one);
+            Gizmos.DrawWireSphere(Vector3.zero, groundCheckRadius);
+            Gizmos.matrix = Matrix4x4.identity;
+        }
+    }
+    #endregion
 }
