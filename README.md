@@ -32,3 +32,9 @@ Detailed technical documentation is available in the [`docs/`](./docs) folder:
    - **Move Left / Right**: `A` / `D` keys.
    - **Jump / Ramp Boost**: `Space` key.
    - **Air Rotation Tricks**: `Arrow Keys` (Up/Down for flips, Left/Right for spins).
+
+---
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
