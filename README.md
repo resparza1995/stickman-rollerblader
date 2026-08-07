@@ -1,6 +1,7 @@
 # Stickman Rollerblader
 
-Retro-style rollerblading game inspired by classic flash stickman animations.
+Retro-style rollerblading game inspired by classic flash stickman animations.  
+[Play here!](https://fytta.itch.io/stickman-rollerblade)  
 
 
 ## Technical Stack & Overview
