@@ -10,12 +10,12 @@ public class PlayerMovement : MonoBehaviour
     public float horizontalMovement;
 
     public float jumpForce = 5f;
+    public float rampJumpForce = 12f;
     public float fallMultiplier = 2.5f;
 
     public Transform groundCheck;
-    public Vector2 groundCheckSize = new Vector2(0.6f, 0.15f);
+    public float groundCheckRadius = 0.25f;
     public LayerMask groundLayer;
-    public float slopeCheckRadius = 0.2f;
     public bool isGrounded;
 
     private Animator animator;
@@ -25,6 +25,8 @@ public class PlayerMovement : MonoBehaviour
     public float slopeRotationSpeed = 25f;
     private Vector2 slopeNormal;
     private bool isOnSlope;
+    private bool isHalfpipe;
+    private bool isVerticalAir;
 
     private bool canRampBoost;
     private Vector2 currentRampBoostImpulse;
@@ -119,6 +121,11 @@ public class PlayerMovement : MonoBehaviour
             Vector2 slopeDirection = new Vector2(slopeNormal.y, -slopeNormal.x);
             rb.linearVelocity = slopeDirection * (horizontalMovement * moveSpeed);
         }
+        else if (isVerticalAir)
+        {
+            rb.gravityScale = initialGravityScale;
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+        }
         else
         {
             rb.gravityScale = initialGravityScale;
@@ -137,6 +144,7 @@ public class PlayerMovement : MonoBehaviour
     {
         bool grounded = false;
         bool slope = false;
+        bool halfpipe = false;
         Vector2 bestNormal = Vector2.up;
 
         if (rb != null)
@@ -144,12 +152,18 @@ public class PlayerMovement : MonoBehaviour
             int count = rb.GetContacts(contactsList);
             for (int i = 0; i < count; i++)
             {
-                Vector2 n = contactsList[i].normal;
+                ContactPoint2D cp = contactsList[i];
+                Vector2 n = cp.normal;
                 if (n.y < 0) n = -n;
 
                 if (n.y > 0.05f)
                 {
                     grounded = true;
+                    if (cp.collider != null && cp.collider.CompareTag("Halfpipe"))
+                    {
+                        halfpipe = true;
+                    }
+
                     if (Mathf.Abs(n.x) > 0.01f)
                     {
                         slope = true;
@@ -166,13 +180,26 @@ public class PlayerMovement : MonoBehaviour
 
         if (!grounded && groundCheck != null)
         {
-            grounded = Physics2D.OverlapBox(groundCheck.position, groundCheckSize, 0f, groundLayer)
-                    || Physics2D.OverlapCircle(groundCheck.position, slopeCheckRadius, groundLayer);
+            Collider2D hit = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+            if (hit != null)
+            {
+                grounded = true;
+                if (hit.CompareTag("Halfpipe"))
+                {
+                    halfpipe = true;
+                }
+            }
         }
 
         isGrounded = grounded;
         isOnSlope = slope;
+        isHalfpipe = halfpipe;
         slopeNormal = bestNormal;
+
+        if (isGrounded)
+        {
+            isVerticalAir = false;
+        }
     }
 
     private void CheckSlope()
@@ -206,18 +233,30 @@ public class PlayerMovement : MonoBehaviour
         if (!isGrounded)
             return;
 
+        bool wasSlope = isOnSlope;
+        bool wasHalfpipe = isHalfpipe;
+
         isGrounded = false;
         isOnSlope = false;
-        jumpCooldownTimer = 0.2f;
         animator.SetTrigger("Jump");
 
-        if (isOnSlope)
+        if (wasSlope && wasHalfpipe)
         {
-            float upVelocity = Mathf.Max(jumpForce, rb.linearVelocity.y + jumpForce * 0.5f);
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.2f, upVelocity);
+            isVerticalAir = true;
+            jumpCooldownTimer = 0.35f;
+            float launchY = Mathf.Max(rampJumpForce, rb.linearVelocity.y + rampJumpForce * 0.4f);
+            rb.linearVelocity = new Vector2(0f, launchY);
+        }
+        else if (wasSlope)
+        {
+            jumpCooldownTimer = 0.2f;
+            float launchY = Mathf.Max(rampJumpForce, rb.linearVelocity.y + rampJumpForce * 0.5f);
+            float launchX = horizontalMovement * (moveSpeed * 0.25f);
+            rb.linearVelocity = new Vector2(launchX, launchY);
         }
         else
         {
+            jumpCooldownTimer = 0.15f;
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
     }
@@ -325,12 +364,9 @@ public class PlayerMovement : MonoBehaviour
     {
         if (groundCheck != null)
         {
-            Gizmos.color = Color.yellow;
-            Gizmos.matrix = Matrix4x4.TRS(groundCheck.position, groundCheck.rotation, Vector3.one);
-            Gizmos.DrawWireCube(Vector3.zero, groundCheckSize);
-
             Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(Vector3.zero, slopeCheckRadius);
+            Gizmos.matrix = Matrix4x4.TRS(groundCheck.position, groundCheck.rotation, Vector3.one);
+            Gizmos.DrawWireSphere(Vector3.zero, groundCheckRadius);
             Gizmos.matrix = Matrix4x4.identity;
         }
     }

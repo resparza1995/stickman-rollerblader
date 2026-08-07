@@ -10,10 +10,12 @@ public class CameraFollow : MonoBehaviour
     
     [Header("Axis Control")]
     public bool followY = false;
+    public bool followYAboveFixed = true;
     public float fixedY = -0.47f;
 
     [Header("Offset")]
     public float offsetX = 0f;
+    public float offsetY = 0f;
     public float offsetZ = -10f;
 
     [Header("Bounds Control")]
@@ -62,7 +64,16 @@ public class CameraFollow : MonoBehaviour
     {
         if (target == null) return;
 
-        float targetY = followY ? (target.position.y + fixedY) : fixedY;
+        float targetY = fixedY;
+        if (followY)
+        {
+            targetY = target.position.y + offsetY;
+        }
+        else if (followYAboveFixed)
+        {
+            targetY = Mathf.Max(fixedY, target.position.y + offsetY);
+        }
+
         float targetX = target.position.x + offsetX;
 
         if (useBounds)
