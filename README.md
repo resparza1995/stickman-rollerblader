@@ -1,8 +1,7 @@
 # Stickman Rollerblader
 
-A retro-style rollerblading game inspired by classic flash stickman animations.
+Retro-style rollerblading game inspired by classic flash stickman animations.
 
----
 
 ## Technical Stack & Overview
 
