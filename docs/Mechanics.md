@@ -1,37 +1,40 @@
 # Gameplay Mechanics
 
-This document provides a technical explanation of the core physics, movement, camera, and trick mechanics in **Stickman Rollerblader**.
+This document provides a technical explanation of the core physics, movement, camera, post-processing, and trick mechanics in **Stickman Rollerblader**.
 
 ---
 
 ## 1. Slope Movement & Normal Alignment
 
-### Slope Surface Speed
-When the player is grounded on an inclined surface (`isGrounded && isOnSlope`), horizontal movement velocity is projected along the slope tangent vector using `Vector2.Perpendicular(slopeNormal)`.
+### Slope Surface Physics (`rb.GetContacts`)
+When the player is grounded on an inclined surface (`isGrounded && isOnSlope`), surface detection uses `rb.GetContacts` for 100% accurate contact normals across steep quarterpipes and curved ramps.
+- Normal inversion correction: Detects negative scale colliders (`slopeNormal.y < 0 => slopeNormal = -slopeNormal`).
+- Slope movement velocity is calculated tangentially along `(slopeNormal.y, -slopeNormal.x)`.
 
 ### Smooth Rotation (`UpdateSlopeRotation`)
 To align the skater's body perpendicularly with curved or angled ramps:
-1. Raycast collision returns the surface normal vector `slopeNormal`.
-2. Angle calculation: `targetAngle = Mathf.Atan2(slopeNormal.y, slopeNormal.x) * Mathf.Rad2Deg - 90f`.
-3. Rotation interpolation: `transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * slopeRotationSpeed)`.
-4. When airborne, the rotation smoothly interpolates back to `0°` (`Quaternion.identity`).
+1. Target angle calculation: `targetAngle = Mathf.Atan2(-slopeNormal.x, slopeNormal.y) * Mathf.Rad2Deg`.
+2. Rotation interpolation in `LateUpdate`: `transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * slopeRotationSpeed)`.
+3. When airborne, rotation smoothly interpolates back to `0°` (`Quaternion.identity`).
 
 ---
 
-## 2. Jump & Fall Physics Dynamics
+## 2. Jump, Halfpipe & Fall Physics Dynamics
+
+### Halfpipe Vertical Air Launch (`Tag: Halfpipe`)
+When jumping on a slope tagged `"Halfpipe"`:
+1. The character enters `isVerticalAir` state.
+2. Direct vertical launch velocity is applied (`Vector2.up * rampJumpForce`, default `rampJumpForce = 12f`).
+3. Lateral movement input (`A`/`D`) is suppressed for physics in the air to allow pure vertical parabolic flight without crashing into ramp walls.
+4. A `jumpCooldownTimer = 0.35f` prevents immediate physics re-grounding overwrite during launch.
 
 ### Dynamic Fall Gravity (`fallMultiplier`)
 To prevent "floaty" jumping physics in 2D space:
-- When the player is ascending (`rb.linearVelocity.y > 0`), standard gravity applies.
+- When ascending (`rb.linearVelocity.y > 0`), standard gravity applies.
 - When descending (`rb.linearVelocity.y < 0`), extra downward acceleration is added:
   ```csharp
   rb.linearVelocity += Vector2.up * (Physics2D.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime);
   ```
-
-### Slope Jump Preservation
-To prevent slope-aligned velocity from crushing upward jump velocity during takeoff:
-- Slope movement is applied in `FixedUpdate` only when `rb.linearVelocity.y <= 0.1f`.
-- `Jump()` sets `isGrounded = false` immediately upon invocation.
 
 ---
 
@@ -48,18 +51,25 @@ Allows the player to gain extra height and speed by pressing `Space` right at th
 
 ---
 
-## 4. Camera Follow System
+## 4. Camera Systems (`CameraFollow.cs` & `VintageFilter.cs`)
 
-### Smooth Damping (`CameraFollow.cs`)
-- Tracks the player's horizontal position (X-axis) using `Vector3.SmoothDamp`.
-- Locks vertical positioning (Y-axis) to a fixed height (`fixedY = -0.47f` by default) to keep side-scrolling level layout visible and stable.
+### Background Bounds & Selective Upward Y Tracking (`CameraFollow.cs`)
+- **Horizontal Clamping**: Automatically calculates `minX` and `maxX` boundaries using `SpriteRenderer` background bounds and camera orthographic aspect ratio to prevent showing out-of-map background edges.
+- **Selective Y Tracking (`followYAboveFixed`)**: Keeps camera Y locked at `fixedY = -0.47f` on the ground, but smoothly follows the player upwards (`Mathf.Max(fixedY, targetY)`) during high vertical air launches.
+
+### Vintage Camera Post-Processing Filter (`VintageFilter.cs` & `VintageEffect.shader`)
+Custom full-screen camera Image Effect featuring:
+- **Sepia & Color Tint**: Adjustable warm sepia tone tinting.
+- **Desaturation**: Analog color saturation reduction.
+- **Vignette**: Circular edge darkening.
+- **Film Grain**: Animated real-time film noise grain.
 
 ---
 
 ## 5. Controls & Trick System
 
 ### Control Scheme
-- **Movement (`WASD`)**: `A` and `D` keys control horizontal skater movement (`Move` action); `W` or `Space` triggers jumps (`Jump` action). Arrow keys are isolated from horizontal movement.
+- **Movement (`WASD`)**: `A` and `D` keys control horizontal skater movement (`Move` action); `W` or `Space` triggers jumps (`Jump` action).
 - **Air Rotation Tricks (`Arrow Keys`)**:
   - **Left / Right Arrow**: Air 360 Spin (360° horizontal body rotation around Y-axis).
   - **Up / Down Arrow**: Backflip (`UpArrow`) and Frontflip (`DownArrow`) (360° somersault flips around Z-axis).
@@ -68,5 +78,6 @@ Allows the player to gain extra height and speed by pressing `Space` right at th
 - **Execution Trigger**: Activated when an Arrow key is pressed while airborne (`!isGrounded`).
 - **Animation & Physics**: Triggers the `AirRotate` animator state (`AirRotate.anim`) and runs dynamic rotation coroutines (`PerformYSpin` for Y-axis spins, `PerformZFlip` for Z-axis flips) over `spinDuration`.
 - **Scoring**: Processed via `TrickController.TryExecuteTrick`, granting score points (e.g., `+150 pts` for `Air360`) upon successful airborne execution.
+
 
 

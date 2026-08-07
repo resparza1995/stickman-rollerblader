@@ -34,9 +34,10 @@ The application architecture is structured into decoupled modules to promote mai
   - `AirborneState`: Handles airborne movement, extra fall gravity, and trick input listening.
   - `GrindingState`: Handles rail attachment, rail directional velocity, and balance mechanics.
 
-### 2.2 Movement & Camera (`Assets/Scripts/`)
-- **`PlayerMovement.cs`**: Handles physics interactions, Raycast slope detection, slope rotation Slerp, and ramp boost timing.
-- **`CameraFollow.cs`**: Implements 2D camera tracking using `Vector3.SmoothDamp` with locked Y-axis positioning for side-scrolling levels.
+### 2.2 Movement, Camera & Post-Processing (`Assets/Scripts/` & `Assets/Shaders/`)
+- **`PlayerMovement.cs`**: Handles Rigidbody2D contact detection, slope vector alignment, halfpipe vertical air trajectory, and jump timers.
+- **`CameraFollow.cs`**: Implements 2D camera tracking using `Vector3.SmoothDamp`, background bounds clamping, and selective upward Y-tracking (`followYAboveFixed`).
+- **`VintageFilter.cs` & `VintageEffect.shader`**: Full-screen post-processing filter providing Sepia tinting, Vignette, Desaturation, and real-time Film Grain.
 
 ### 2.3 Obstacle System (`Assets/Scripts/Obstacles/`)
 - **`IRampObstacle`**: Interface defining launch impulse vectors and boost trigger timing windows.

@@ -1,4 +1,8 @@
-# Carpetas temporales y generadas por Unity
+# ==========================================
+# Unity GitHub .gitignore Template
+# ==========================================
+
+# Unity temporary and generated folders
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -9,31 +13,53 @@
 /[Mm]emoryCaptures/
 /[Rr]ecordings/
 
-# Archivos de caché de compilación de Android
+# Android build cache
 .utmp/
 
-# Archivos de configuración de editores de código (VS Code, Visual Studio, Rider)
-.vs/
-.gradle/
-ExportedObj/
-.consulo/
-.idea/
+# Auto-generated project files
+*.csproj
+*.unityproj
+*.sln
 *.suo
 *.user
 *.userprefs
-*.sln
-*.csproj
-*.unityproj
+*.pidb
 *.booproj
+*.svd
+*.pdb
+*.opendb
+*.idb
+*.slnx
 
-# Archivos del sistema operativo
+# IDE & Editor caches
+.vs/
+.idea/
+.vscode/
+.gradle/
+ExportedObj/
+.consulo/
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Forzar la inclusión de los archivos .meta (¡Críticos para Unity!)
+# Asset store tools
+/[Aa]ssets/[Aa]sset[Ss]Store[Tt]ools*
+
+# Builds & Packages
+*.apk
+*.aab
+*.unitypackage
+
+# Critical Unity rule: Always track .meta files
 !/[Aa]ssets/**/*.meta
 
-# Archivos de volcado de memoria y logs intermitentes
+# Crash logs and dumps
 *.log
 *.crash
 *.dll.*
