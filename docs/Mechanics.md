@@ -79,5 +79,25 @@ Custom full-screen camera Image Effect featuring:
 - **Animation & Physics**: Triggers the `AirRotate` animator state (`AirRotate.anim`) and runs dynamic rotation coroutines (`PerformYSpin` for Y-axis spins, `PerformZFlip` for Z-axis flips) over `spinDuration`.
 - **Scoring**: Processed via `TrickController.TryExecuteTrick`, granting score points (e.g., `+150 pts` for `Air360`) upon successful airborne execution.
 
+---
+
+## 6. Rail Grinding & Grind Stances
+
+### Rail Surface Detection (`Tag: Rail` / `IRailObstacle`)
+When the player collides with an object tagged `"Rail"` or implementing `IRailObstacle`:
+1. `UpdateGroundedState` activates `isGrinding = true`.
+2. Gravity scale is set to `0f` in `FixedUpdate` so the player locks smoothly onto the rail line.
+3. Player horizontal velocity slides tangentially along the rail slope normal.
+
+### Grind Stances & Controls
+- **Keys `1` / `Numpad1`**: Switches stance to **Royal** (`Royal.anim`, `+200 pts`).
+- **Keys `2` / `Numpad2`**: Switches stance to **Savannah** (`Savannah.anim`, `+300 pts`).
+- **Keys `3` / `Numpad3`**: Switches stance to **Soul** (`Soul.anim`, `+250 pts`).
+
+### Rail Exit Mechanics
+- **Jump Exit**: Pressing `Space` / `W` while grinding sets `isGrinding = false` and `isGrounded = false`, triggering the `Jump` animation immediately.
+- **Airborne Exit Guard**: Animator exit transitions from grind states require `IsGrounded == true` to enter `Skating` or `IdleReady`, preventing the player from entering ground animation states while falling through the air.
+
+
 
 

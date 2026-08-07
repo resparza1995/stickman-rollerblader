@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// Controls player movement, physics, slope alignment, rail grinding, halfpipe launches, and trick executions.
+/// </summary>
 public class PlayerMovement : MonoBehaviour
 {
     private Rigidbody2D rb;
@@ -53,6 +56,9 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Per-frame update for input checks, cooldown timers, and animator parameter synchronization.
+    /// </summary>
     void Update()
     {
         checkFlip();
@@ -80,6 +86,9 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Reads direct number key input (1, 2, 3 or Numpad 1, 2, 3) to switch grind stances.
+    /// </summary>
     private void CheckGrindInput()
     {
         if (Keyboard.current == null) return;
@@ -98,6 +107,9 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Updates the active grind stance (1: Royal, 2: Savannah, 3: Soul) and triggers animator state and score execution when grinding.
+    /// </summary>
     private void SetGrindStance(int type, string trickName)
     {
         currentGrindType = type;
@@ -119,7 +131,9 @@ public class PlayerMovement : MonoBehaviour
         UpdateSlopeRotation();
     }
 
-
+    /// <summary>
+    /// Interpolates character rotation smoothly to match slope or rail normal inclination.
+    /// </summary>
     private void UpdateSlopeRotation()
     {
         if (isSpinning) return;
@@ -155,6 +169,9 @@ public class PlayerMovement : MonoBehaviour
         rampBoostTimer = duration;
     }
 
+    /// <summary>
+    /// Executes physics velocity updates for normal movement, slope sliding, zero-gravity grinding, and dynamic fall gravity.
+    /// </summary>
     void FixedUpdate()
     {
         rb.angularVelocity = 0f;
